@@ -1,0 +1,113 @@
+#include "register.h"
+#include <gtkmm.h>
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+string GetRegister(const string &name, const string &email, const string &passw1, const string &passw2)
+{
+
+    if (name.empty() || email.empty() || passw1.empty() || passw2.empty())
+    {
+        return "Register Data isnt valid!";
+    }
+
+    return "Register data Are valid!";
+}
+
+Gtk::Widget *create_register_page()
+{
+    auto outer = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
+    outer->set_valign(Gtk::ALIGN_CENTER);
+    outer->set_halign(Gtk::ALIGN_CENTER);
+
+    auto frame = Gtk::make_managed<Gtk::Frame>();
+    frame->set_shadow_type(Gtk::SHADOW_NONE);
+    frame->set_name("register-card");
+
+    auto content = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
+    content->set_spacing(12);
+    content->set_margin_top(12);
+    content->set_margin_bottom(12);
+    content->set_margin_start(12);
+    content->set_margin_end(12);
+
+    auto title = Gtk::make_managed<Gtk::Label>("Create an Account");
+    title->set_halign(Gtk::ALIGN_CENTER);
+    title->get_style_context()->add_class("title");
+
+    // Labels
+    auto name_label = Gtk::make_managed<Gtk::Label>("Full Name");
+    auto email_label = Gtk::make_managed<Gtk::Label>("Email Address");
+    auto pass1_label = Gtk::make_managed<Gtk::Label>("Password");
+    auto pass2_label = Gtk::make_managed<Gtk::Label>("Confirm Password");
+
+    name_label->set_halign(Gtk::ALIGN_START);
+    email_label->set_halign(Gtk::ALIGN_START);
+    pass1_label->set_halign(Gtk::ALIGN_START);
+    pass2_label->set_halign(Gtk::ALIGN_START);
+
+    // Entries
+    auto name_entry = Gtk::make_managed<Gtk::Entry>();
+    auto email_entry = Gtk::make_managed<Gtk::Entry>();
+    auto pass1_entry = Gtk::make_managed<Gtk::Entry>();
+    auto pass2_entry = Gtk::make_managed<Gtk::Entry>();
+
+    name_entry->set_size_request(300, 30);
+    email_entry->set_size_request(300, 30);
+    pass1_entry->set_size_request(300, 30);
+    pass2_entry->set_size_request(300, 30);
+
+    pass1_entry->set_visibility(false);
+    pass1_entry->set_invisible_char('*');
+    pass2_entry->set_visibility(false);
+    pass2_entry->set_invisible_char('*');
+
+    // Register button
+    auto register_button = Gtk::make_managed<Gtk::Button>("Register");
+    register_button->set_name("register-button");
+    register_button->set_size_request(300, 40);
+    register_button->signal_clicked().connect([=]()
+                                              {
+    cout << "Name: " << name_entry->get_text() << endl;
+    cout << "Email: " << email_entry->get_text() << endl;
+    cout << "Password: " << pass1_entry->get_text() <<endl;
+    cout << "Confirm: " << pass2_entry->get_text() << endl;
+
+    string name = name_entry->get_text();
+    string email = email_entry->get_text();
+    string passw1 = pass1_entry->get_text();
+    string passw2 = pass2_entry->get_text();
+
+    cout << GetRegister(name, email, passw1, passw2) << endl; });
+
+    // Bottom link
+    auto bottom_text = Gtk::make_managed<Gtk::Label>("Already have an account?");
+    auto sign_in_link = Gtk::make_managed<Gtk::Label>("Sign in");
+    sign_in_link->get_style_context()->add_class("link");
+
+    auto bottom_box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
+    bottom_box->set_halign(Gtk::ALIGN_CENTER);
+    bottom_box->set_spacing(4);
+    bottom_box->pack_start(*bottom_text, Gtk::PACK_SHRINK);
+    bottom_box->pack_start(*sign_in_link, Gtk::PACK_SHRINK);
+
+    // Pack everything
+    content->pack_start(*title, Gtk::PACK_SHRINK);
+    content->pack_start(*name_label, Gtk::PACK_SHRINK);
+    content->pack_start(*name_entry, Gtk::PACK_SHRINK);
+    content->pack_start(*email_label, Gtk::PACK_SHRINK);
+    content->pack_start(*email_entry, Gtk::PACK_SHRINK);
+    content->pack_start(*pass1_label, Gtk::PACK_SHRINK);
+    content->pack_start(*pass1_entry, Gtk::PACK_SHRINK);
+    content->pack_start(*pass2_label, Gtk::PACK_SHRINK);
+    content->pack_start(*pass2_entry, Gtk::PACK_SHRINK);
+    content->pack_start(*register_button, Gtk::PACK_SHRINK);
+    content->pack_start(*bottom_box, Gtk::PACK_SHRINK);
+
+    frame->add(*content);
+    outer->pack_start(*frame, Gtk::PACK_SHRINK);
+
+    return outer;
+}

@@ -1,0 +1,79 @@
+/* Welcome Page Style CSS*/
+#welcome-title {
+    font-size: 32px;
+    font-weight: bold;
+    color: #0f172a;
+    /* dark blue-gray */
+}
+
+#primary-button {
+    background: #2563eb;
+    color: white;
+    border-radius: 8px;
+    font-weight: bold;
+    border: none;
+}
+
+#primary-button:hover {
+    background: #1d4ed8;
+}
+
+
+/* Login Page Style CSS */
+
+
+#login-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 24px;
+}
+
+entry {
+    border-radius: 6px;
+    padding: 8px;
+    border: 1px solid #ccc;
+}
+
+#login-button {
+    background: #2563eb;
+    color: white;
+    border-radius: 8px;
+    padding: 12px;
+    font-weight: bold;
+}
+
+#login-button:hover {
+    background: #1e40af;
+}
+
+label.title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #1e40af;
+}
+
+label.link {
+    color: #2563eb;
+    font-size: 12px;
+}
+
+
+/* Register Page GUI */
+
+#register-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 24px;
+}
+
+#register-button {
+    background: #2563eb;
+    color: white;
+    border-radius: 8px;
+    padding: 12px;
+    font-weight: bold;
+}
+
+#register-button:hover {
+    background: #1e40af;
+}
