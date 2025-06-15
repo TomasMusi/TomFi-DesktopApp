@@ -4,7 +4,8 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/usr/include/gtkmm-3.0"
+                "/usr/include/gtkmm-3.0",
+                "${workspaceFolder}/discord-rpc/include"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/g++",

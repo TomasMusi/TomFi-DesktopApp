@@ -1,8 +1,12 @@
 #include "login_page.h"
 #include <iostream>
+#include "../register/register.h"
 
-Gtk::Widget *create_login_page()
+using namespace std;
+
+Gtk::Widget *create_login_page(Gtk::Window &window)
 {
+
     auto outer = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
     outer->set_valign(Gtk::ALIGN_CENTER);
     outer->set_halign(Gtk::ALIGN_CENTER);
@@ -50,8 +54,18 @@ Gtk::Widget *create_login_page()
         std::cout << "Password: " << pass_entry->get_text() << std::endl; });
 
     auto register_text = Gtk::make_managed<Gtk::Label>("Don't have an account?");
-    auto register_link = Gtk::make_managed<Gtk::Label>("Register");
-    register_link->get_style_context()->add_class("link");
+    auto register_link = Gtk::make_managed<Gtk::Button>("Register");
+    register_link->get_style_context()->add_class("link-button");
+    register_link->set_relief(Gtk::RELIEF_NONE); // No border
+
+    register_link->signal_clicked().connect([&window]()
+                                            {
+    window.remove(); // remove current widget
+
+    Gtk::Widget *register_ui = create_register_page(window); // new content
+    window.add(*register_ui);
+    window.set_title("TomFi | Register UI");
+    register_ui->show_all(); });
 
     auto register_box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
     register_box->set_halign(Gtk::ALIGN_CENTER);

@@ -77,3 +77,20 @@ label.link {
 #register-button:hover {
     background: #1e40af;
 }
+
+
+/* Clickable Link */
+
+
+.link-button {
+    background: none;
+    border: none;
+    color: #2563eb;
+    text-decoration: underline;
+    font-size: 12px;
+    padding: 0;
+}
+
+.link-button:hover {
+    color: #1e40af;
+}

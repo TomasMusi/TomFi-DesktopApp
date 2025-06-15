@@ -27,19 +27,21 @@ Gtk::Widget *create_welcome(Gtk::Window &window)
     login_button->signal_clicked().connect([&window, outer]()
                                            {
                                                window.remove();                        // remove current widget
-                                               Gtk::Widget *login_ui = create_login_page(); // call the login GUI
+                                               Gtk::Widget *login_ui = create_login_page(window); // call the login GUI
                                                window.add(*login_ui);
+                                               window.set_title("TomFi | Login UI");
                                                login_ui->show_all(); });
 
     // Register button
     auto register_button = Gtk::make_managed<Gtk::Button>("Register");
     register_button->set_size_request(200, 40);
     register_button->set_name("primary-button");
-    register_button->signal_clicked().connect([&window, outer]()
+    register_button->signal_clicked().connect([&window]()
                                               { 
                                             window.remove();
-                                            Gtk::Widget *register_ui = create_register_page();
+                                            Gtk::Widget *register_ui = create_register_page(window);
                                             window.add(*register_ui);
+                                            window.set_title("TomFi | Register UI");
                                             register_ui->show_all(); });
 
     // Pack all widgets

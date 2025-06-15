@@ -5,6 +5,6 @@
 
 #include <gtkmm.h>
 
-Gtk::Widget *create_login_page();
+Gtk::Widget *create_login_page(Gtk::Window &window);
 
 #endif

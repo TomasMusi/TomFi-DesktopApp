@@ -1,4 +1,5 @@
 #include "register.h"
+#include "../login/login_page.h"
 #include <gtkmm.h>
 #include <iostream>
 #include <string>
@@ -16,7 +17,7 @@ string GetRegister(const string &name, const string &email, const string &passw1
     return "Register data Are valid!";
 }
 
-Gtk::Widget *create_register_page()
+Gtk::Widget *create_register_page(Gtk::Window &window)
 {
     auto outer = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
     outer->set_valign(Gtk::ALIGN_CENTER);
@@ -84,8 +85,18 @@ Gtk::Widget *create_register_page()
 
     // Bottom link
     auto bottom_text = Gtk::make_managed<Gtk::Label>("Already have an account?");
-    auto sign_in_link = Gtk::make_managed<Gtk::Label>("Sign in");
-    sign_in_link->get_style_context()->add_class("link");
+    auto sign_in_link = Gtk::make_managed<Gtk::Button>("Sign in");
+    sign_in_link->get_style_context()->add_class("link-button");
+    sign_in_link->set_relief(Gtk::RELIEF_NONE); // No Border.
+
+    sign_in_link->signal_clicked().connect([&window]()
+                                           {
+    window.remove(); // remove current widget
+
+    Gtk::Widget *login_ui = create_login_page(window); // new content
+    window.add(*login_ui);
+    window.set_title("TomFi | Login UI");
+    login_ui->show_all(); });
 
     auto bottom_box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
     bottom_box->set_halign(Gtk::ALIGN_CENTER);
