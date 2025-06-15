@@ -1,0 +1,30 @@
+# Ignore build artifacts
+*.o
+*.obj
+*.exe
+*.out
+*.a
+*.so
+*.dll
+
+# Ignore compiled binary
+gtk_hello
+*.bin
+
+# Ignore VSCode settings (optional)
+.vscode/
+*.code-workspace
+
+# Ignore GTK-specific generated files (if any)
+*.cache
+*.gch
+
+# Ignore logs
+*.log
+
+# Ignore CMake build directory (if you use it)
+build/
+CMakeFiles/
+CMakeCache.txt
+Makefile
+cmake_install.cmake
