@@ -3,6 +3,7 @@
 #include <iostream>
 #include "discord_rpc.h"
 #include "discord-activity/discord_integration.h"
+#include "env.hpp"
 
 using namespace std;
 
@@ -33,6 +34,8 @@ bool update_discord()
 
 int main(int argc, char *argv[])
 {
+    load_env(".env");
+
     auto app = Gtk::Application::create(argc, argv, "com.tomfi.welcomepage");
 
     Gtk::Window window;
@@ -59,6 +62,7 @@ int main(int argc, char *argv[])
     // Add Welcome Page UI
     Gtk::Widget *welcome_page = create_welcome(window);
     window.add(*welcome_page);
+
     window.show_all();
 
     return app->run(window);

@@ -3,17 +3,18 @@
 #include "discord_integration.h"
 #include <cstring>
 #include <ctime>
+#include "../env.hpp"
 
 using namespace std;
 
 void init_discord()
 {
-
+    std::string discord_id = env_vars["DISCORD_ID"];
     cout << " I am running now!";
     DiscordEventHandlers handlers;
     std::memset(&handlers, 0, sizeof(handlers));
 
-    Discord_Initialize("1383726668408946708", &handlers, 1, nullptr);
+    Discord_Initialize(discord_id.c_str(), &handlers, 1, nullptr);
 
     DiscordRichPresence presence;
     std::memset(&presence, 0, sizeof(presence));

@@ -14,6 +14,16 @@ string GetRegister(const string &name, const string &email, const string &passw1
         return "Register Data isnt valid!";
     }
 
+    if (passw1.length() < 5 || passw2.length() < 5)
+    {
+        return "Passwords must be at least 5 characters long!";
+    }
+
+    if (passw1 != passw2)
+    {
+        return "Passwords don't match!";
+    }
+
     return "Register data Are valid!";
 }
 

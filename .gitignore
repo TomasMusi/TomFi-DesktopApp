@@ -1,4 +1,4 @@
-# Ignore build artifacts
+# Build artifacts and temporary files
 *.o
 *.obj
 *.exe
@@ -6,25 +6,28 @@
 *.a
 *.so
 *.dll
-
-# Ignore compiled binary
-gtk_hello
 *.bin
-
-# Ignore VSCode settings (optional)
-.vscode/
-*.code-workspace
-
-# Ignore GTK-specific generated files (if any)
+*.log
 *.cache
 *.gch
 
-# Ignore logs
-*.log
+# Compiled binary
+gtk_hello
 
-# Ignore CMake build directory (if you use it)
-build/
-CMakeFiles/
-CMakeCache.txt
+# Environment file
+.env
+
+# IDE/editor settings
+.vscode/
+*.code-workspace
+
+# CMake generated files and build system
+/build/
+/CMakeFiles/
+/CMakeCache.txt
 Makefile
 cmake_install.cmake
+
+# Third-party dependencies
+/discord-rpc/
+/cpp-dotenv/
