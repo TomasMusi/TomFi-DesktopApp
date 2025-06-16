@@ -1,4 +1,4 @@
-# 💻 TomFi Desktop — Modern Banking Client (C++ / GTK)
+# 💻 TomFi Desktop — Banking Client (C++ / GTK)
 
 A native desktop version of the **TomFi** banking system — rebuilt in **C++** using **GTK** for UI.
 
