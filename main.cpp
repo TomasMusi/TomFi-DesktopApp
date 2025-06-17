@@ -34,6 +34,8 @@ bool update_discord()
 
 int main(int argc, char *argv[])
 {
+
+    cout << "Program started! " << endl;
     load_env(".env");
 
     auto app = Gtk::Application::create(argc, argv, "com.tomfi.welcomepage");

@@ -2,36 +2,47 @@
 #include <fstream>
 #include <stdexcept>
 #include <iostream>
+#include <algorithm> // for std::isspace
+using namespace std;
+
+// Trim helper
+inline string trim(const string &s)
+{
+    size_t start = s.find_first_not_of(" \t\r\n");
+    size_t end = s.find_last_not_of(" \t\r\n");
+
+    return (start == string::npos) ? "" : s.substr(start, end - start + 1);
+}
 
 // Define the global variable here
-std::unordered_map<std::string, std::string> env_vars;
+unordered_map<string, string> env_vars;
 
-void load_env(const std::string &path)
+void load_env(const string &path)
 {
-    std::ifstream file(path);
+    ifstream file(path);
     if (!file.is_open())
     {
-        throw std::runtime_error("Could not open .env file: " + path);
+        throw runtime_error("Could not open .env file: " + path);
     }
 
-    std::string line;
-    while (std::getline(file, line))
+    string line;
+    while (getline(file, line))
     {
         if (line.empty() || line[0] == '#')
             continue;
 
         size_t pos = line.find('=');
-        if (pos == std::string::npos)
+        if (pos == string::npos)
             continue;
 
-        std::string key = line.substr(0, pos);
-        std::string value = line.substr(pos + 1);
+        string key = trim(line.substr(0, pos));
+        string value = trim(line.substr(pos + 1));
         env_vars[key] = value;
     }
 
     // Optional debug print
     for (const auto &[k, v] : env_vars)
     {
-        std::cout << "[env] " << k << " = " << v << std::endl;
+        cout << "[env] " << k << " = " << v << endl;
     }
 }

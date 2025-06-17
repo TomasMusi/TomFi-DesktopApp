@@ -9,15 +9,15 @@ using namespace std;
 
 void init_discord()
 {
-    std::string discord_id = env_vars["DISCORD_ID"];
+    string discord_id = env_vars["DISCORD_ID"];
     cout << " I am running now!";
     DiscordEventHandlers handlers;
-    std::memset(&handlers, 0, sizeof(handlers));
+    memset(&handlers, 0, sizeof(handlers));
 
     Discord_Initialize(discord_id.c_str(), &handlers, 1, nullptr);
 
     DiscordRichPresence presence;
-    std::memset(&presence, 0, sizeof(presence));
+    memset(&presence, 0, sizeof(presence));
 
     presence.state = "Browsing";
     presence.details = "Using TomFi App";
