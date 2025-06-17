@@ -3,6 +3,8 @@
 #include <gtkmm.h>
 #include <iostream>
 #include <string>
+#include "../bcrypt/bcrypt.h"
+#include "../env.hpp"
 
 using namespace std;
 
@@ -24,11 +26,32 @@ string GetRegister(const string &name, const string &email, const string &passw1
         return "Passwords don't match!";
     }
 
+    const char *cstr = passw1.c_str();
+
+    char salt[BCRYPT_HASHSIZE];
+    char hash[BCRYPT_HASHSIZE];
+
+    int rounds = stoi(env_vars["BCRYPT_ROUNDS"]);
+
+    // Generating Salt.
+    if (bcrypt_gensalt(rounds, salt) != 0)
+    {
+        return "Failed to generate salt!";
+    }
+
+    if (bcrypt_hashpw(cstr, salt, hash) != 0)
+    {
+        return "Failed to hash password!";
+    }
+
+    cout << "Hashed Password: " << hash << endl;
+
     return "Register data Are valid!";
 }
 
 Gtk::Widget *create_register_page(Gtk::Window &window)
 {
+
     auto outer = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
     outer->set_valign(Gtk::ALIGN_CENTER);
     outer->set_halign(Gtk::ALIGN_CENTER);

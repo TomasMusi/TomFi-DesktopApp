@@ -14,6 +14,9 @@
 # Compiled binary
 gtk_hello
 
+/gtk_hello
+/.vscode/
+
 # Environment file
 .env
 
@@ -27,6 +30,7 @@ gtk_hello
 /CMakeCache.txt
 Makefile
 cmake_install.cmake
+/CMakeLists.txt/
 
 # Third-party dependencies
 /discord-rpc/
