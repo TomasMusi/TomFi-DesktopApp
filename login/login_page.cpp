@@ -4,7 +4,26 @@
 
 using namespace std;
 
-Gtk::Widget *create_login_page(Gtk::Window &window)
+struct LoginResults
+{
+    string message;
+    bool success;
+};
+
+LoginResults
+LoginRequest(string &email, string &password)
+{
+
+    if (email.empty() || password.empty())
+    {
+        return {" ⛔ Login data are not valid!", false};
+    }
+
+    return {"✅ Login was successfull!", true};
+}
+
+Gtk::Widget *
+create_login_page(Gtk::Window &window)
 {
 
     auto outer = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
@@ -48,10 +67,25 @@ Gtk::Widget *create_login_page(Gtk::Window &window)
     auto login_button = Gtk::make_managed<Gtk::Button>("Log In");
     login_button->set_name("login-button");
     login_button->set_size_request(300, 40);
-    login_button->signal_clicked().connect([=]()
+    login_button->signal_clicked().connect([&window, email_entry, pass_entry]()
                                            {
-        std::cout << "Email: " << email_entry->get_text() << std::endl;
-        std::cout << "Password: " << pass_entry->get_text() << std::endl; });
+                                               std::cout << "Email: " << email_entry->get_text() << std::endl;
+                                               std::cout << "Password: " << pass_entry->get_text() << std::endl;
+
+                                               string Email = email_entry->get_text();
+                                               string Password = pass_entry->get_text();
+
+                                               LoginResults result = LoginRequest(Email, Password);
+                                               cout << result.message << endl;
+
+                                               if (result.success)
+                                               {
+                                                   show_toast_success(window, result.message);
+                                               }
+                                               else
+                                               {
+                                                   show_toast_fail(window, result.message);
+                                               } });
 
     auto register_text = Gtk::make_managed<Gtk::Label>("Don't have an account?");
     auto register_link = Gtk::make_managed<Gtk::Button>("Register");

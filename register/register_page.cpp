@@ -52,7 +52,7 @@ RegisterResult GetRegister(const string &name, const string &email, const string
 
     cout << "Hashed Password: " << hash << endl;
 
-    return {" ✅ Registration successful!", true};
+    return {" ✅ Registration successfull!", true};
 }
 
 Gtk::Widget *create_register_page(Gtk::Window &window)
@@ -121,7 +121,7 @@ Gtk::Widget *create_register_page(Gtk::Window &window)
                                                   string passw2 = pass2_entry->get_text();
                                                 
                                                   RegisterResult result = GetRegister(name, email, passw1, passw2);
-                                                cout << result.message << std::endl;
+                                                  cout << result.message << endl;
 
                                                   if (result.success)
                                                   {
