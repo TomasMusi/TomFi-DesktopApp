@@ -22,7 +22,7 @@ LoginRequest(string &email, string &password)
 
     // DB Call.
 
-    if (verify_login(email))
+    if (verify_login(email, password))
     {
         return {" ✅ Login Was Sucessfull", true};
     }

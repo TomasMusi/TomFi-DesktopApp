@@ -2,10 +2,11 @@
 #include "mysql.h"
 #include <iostream>
 #include "../env.hpp"
+#include <bcrypt/bcrypt.h>
 
 using namespace std;
 
-bool verify_login(const string &email)
+bool verify_login(const string &email, const string &password)
 {
     MYSQL *conn;    // Pointer to the connection object
     MYSQL_RES *res; // Result of the query
@@ -63,6 +64,19 @@ bool verify_login(const string &email)
 
     // fetching, meaning getting the data.
     row = mysql_fetch_row(res);
+
+    const char *hashed = row[4];          // Password from DB
+    const char *plain = password.c_str(); // User input
+
+    int bcrypt_result = bcrypt_checkpw(plain, hashed);
+
+    if (bcrypt_result != 0)
+    {
+        // Password wrong
+        mysql_free_result(res);
+        mysql_close(conn);
+        return false;
+    }
 
     cout << "✅ User found!" << endl;
     cout << "Name: " << row[0] << endl;

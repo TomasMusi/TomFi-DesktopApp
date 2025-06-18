@@ -5,6 +5,6 @@
 
 using namespace std;
 
-bool verify_login(const string &email);
+bool verify_login(const string &email, const string &password);
 
 #endif
