@@ -26,6 +26,7 @@ Gtk::Widget *create_welcome(Gtk::Window &window)
     login_button->set_name("primary-button");
     login_button->signal_clicked().connect([&window, outer]()
                                            {
+                                               show_toast_fail(window, "⛔ Failed!");
                                                window.remove();                        // remove current widget
                                                Gtk::Widget *login_ui = create_login_page(window); // call the login GUI
                                                window.add(*login_ui);
@@ -38,6 +39,7 @@ Gtk::Widget *create_welcome(Gtk::Window &window)
     register_button->set_name("primary-button");
     register_button->signal_clicked().connect([&window]()
                                               { 
+                                            show_toast_success(window, "✅ Registered successfully!");
                                             window.remove();
                                             Gtk::Widget *register_ui = create_register_page(window);
                                             window.add(*register_ui);

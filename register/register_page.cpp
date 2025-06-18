@@ -8,22 +8,28 @@
 
 using namespace std;
 
-string GetRegister(const string &name, const string &email, const string &passw1, const string &passw2)
+struct RegisterResult
+{
+    string message;
+    bool success;
+};
+
+RegisterResult GetRegister(const string &name, const string &email, const string &passw1, const string &passw2)
 {
 
     if (name.empty() || email.empty() || passw1.empty() || passw2.empty())
     {
-        return "Register Data isnt valid!";
+        return {" ⛔ Register data isn't valid!", false};
     }
 
     if (passw1.length() < 5 || passw2.length() < 5)
     {
-        return "Passwords must be at least 5 characters long!";
+        return {" ⛔ Passwords must be at least 5 characters long!", false};
     }
 
     if (passw1 != passw2)
     {
-        return "Passwords don't match!";
+        return {" ⛔ Passwords don't match!", false};
     }
 
     const char *cstr = passw1.c_str();
@@ -36,17 +42,17 @@ string GetRegister(const string &name, const string &email, const string &passw1
     // Generating Salt.
     if (bcrypt_gensalt(rounds, salt) != 0)
     {
-        return "Failed to generate salt!";
+        return {" ⛔ Failed to generate salt!", false};
     }
 
     if (bcrypt_hashpw(cstr, salt, hash) != 0)
     {
-        return "Failed to hash password!";
+        return {" ⛔ Failed to hash password!", false};
     }
 
     cout << "Hashed Password: " << hash << endl;
 
-    return "Register data Are valid!";
+    return {" ✅ Registration successful!", true};
 }
 
 Gtk::Widget *create_register_page(Gtk::Window &window)
@@ -102,19 +108,29 @@ Gtk::Widget *create_register_page(Gtk::Window &window)
     auto register_button = Gtk::make_managed<Gtk::Button>("Register");
     register_button->set_name("register-button");
     register_button->set_size_request(300, 40);
-    register_button->signal_clicked().connect([=]()
+    register_button->signal_clicked().connect([&window, name_entry, email_entry, pass1_entry, pass2_entry]()
                                               {
-    cout << "Name: " << name_entry->get_text() << endl;
-    cout << "Email: " << email_entry->get_text() << endl;
-    cout << "Password: " << pass1_entry->get_text() <<endl;
-    cout << "Confirm: " << pass2_entry->get_text() << endl;
+                                                  cout << "Name: " << name_entry->get_text() << endl;
+                                                  cout << "Email: " << email_entry->get_text() << endl;
+                                                  cout << "Password: " << pass1_entry->get_text() << endl;
+                                                  cout << "Confirm: " << pass2_entry->get_text() << endl;
 
-    string name = name_entry->get_text();
-    string email = email_entry->get_text();
-    string passw1 = pass1_entry->get_text();
-    string passw2 = pass2_entry->get_text();
+                                                  string name = name_entry->get_text();
+                                                  string email = email_entry->get_text();
+                                                  string passw1 = pass1_entry->get_text();
+                                                  string passw2 = pass2_entry->get_text();
+                                                
+                                                  RegisterResult result = GetRegister(name, email, passw1, passw2);
+                                                cout << result.message << std::endl;
 
-    cout << GetRegister(name, email, passw1, passw2) << endl; });
+                                                  if (result.success)
+                                                  {
+                                                    show_toast_success(window, result.message);
+                                                  }
+                                                  else
+                                                  {
+                                                    show_toast_fail(window, result.message);
+                                                  } });
 
     // Bottom link
     auto bottom_text = Gtk::make_managed<Gtk::Label>("Already have an account?");

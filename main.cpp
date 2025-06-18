@@ -26,10 +26,123 @@ pair<int, int> getCoordinates()
     return make_pair(400, 300);
 }
 
+// Updating Discord, to see User State.
 bool update_discord()
 {
     Discord_RunCallbacks();
     return true; // keep repeating
+}
+
+// Show Success Function
+void show_toast_success(Gtk::Window &parent, const Glib::ustring &message)
+{
+    auto toast = new Gtk::Window(Gtk::WINDOW_POPUP);
+    toast->set_decorated(false);
+    toast->set_resizable(false);
+    toast->set_type_hint(Gdk::WINDOW_TYPE_HINT_TOOLTIP);
+
+    // background transparent
+    Gdk::RGBA green_bg;
+    green_bg.set_rgba(0.831, 0.929, 0.855, 1.0); // same thing
+    toast->override_background_color(green_bg);
+
+    int toast_width = 170;
+    int margin = 40;
+
+    // Create a container box to wrap the label
+    auto box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
+    box->set_margin_top(20);
+    box->set_margin_bottom(20);
+    box->set_margin_left(10);
+    box->set_margin_right(10);
+    box->set_size_request(toast_width, -1);
+    box->get_style_context()->add_class("toast-box");
+
+    // 🟢 Tell GTK to expand the box fully
+    box->set_hexpand(true);
+    box->set_vexpand(true);
+
+    // Create the label and style it
+    auto label = Gtk::make_managed<Gtk::Label>(message);
+    label->get_style_context()->add_class("toast-label");
+
+    box->pack_start(*label, Gtk::PACK_SHRINK);
+    toast->add(*box);
+    toast->show_all();
+
+    // Get parent window position
+    int win_x, win_y;
+    parent.get_position(win_x, win_y);
+
+    int win_width, win_height;
+    parent.get_size(win_width, win_height);
+
+    // Place the toast in the top-right corner of the parent window
+    int x = win_x + win_width - toast_width - margin;
+    int y = win_y + margin;
+
+    toast->move(x, y);
+
+    Glib::signal_timeout().connect_once([toast]()
+                                        {
+        toast->hide();
+        delete toast; }, 2 * 1000);
+}
+
+// Show Fail Function
+void show_toast_fail(Gtk::Window &parent, const Glib::ustring &message)
+{
+    auto toast = new Gtk::Window(Gtk::WINDOW_POPUP);
+    toast->set_decorated(false);
+    toast->set_resizable(false);
+    toast->set_type_hint(Gdk::WINDOW_TYPE_HINT_TOOLTIP);
+
+    // background transparent
+    Gdk::RGBA red_bg;
+    red_bg.set_rgba(0.973, 0.843, 0.855, 1.0); // #f8d7da
+    toast->override_background_color(red_bg);
+
+    int toast_width = 170;
+    int margin = 40;
+
+    // Create a container box to wrap the label
+    auto box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
+    box->set_margin_top(20);
+    box->set_margin_bottom(20);
+    box->set_margin_left(10);
+    box->set_margin_right(10);
+    box->set_size_request(toast_width, -1);
+    box->get_style_context()->add_class("toast-box-fail");
+
+    // 🟢 Tell GTK to expand the box fully
+    box->set_hexpand(true);
+    box->set_vexpand(true);
+
+    // Create the label and style it
+    auto label = Gtk::make_managed<Gtk::Label>(message);
+    label->get_style_context()->add_class("toast-label-fail");
+
+    box->pack_start(*label, Gtk::PACK_SHRINK);
+    toast->add(*box);
+    toast->show_all();
+
+    // Get parent window position
+    int win_x, win_y;
+    parent.get_position(win_x, win_y);
+
+    int win_width, win_height;
+    parent.get_size(win_width, win_height);
+
+    // Place the toast in the top-right corner of the parent window
+    int x = win_x + win_width - toast_width - margin;
+    int y = win_y + margin;
+
+    toast->move(x, y);
+
+    Glib::signal_timeout().connect_once([toast]()
+                                        {
+        toast->hide();
+        delete toast; }, 2 * 1000);
 }
 
 int main(int argc, char *argv[])

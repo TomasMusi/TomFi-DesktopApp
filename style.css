@@ -94,3 +94,14 @@ label.link {
 .link-button:hover {
     color: #1e40af;
 }
+
+.toast-box {
+    background-color: #d4edda;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.toast-label {
+    color: #155724;
+    font-weight: bold;
+    font-size: 14px;
+}
