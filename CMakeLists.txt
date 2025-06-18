@@ -19,7 +19,9 @@ add_definitions(${GTKMM_CFLAGS_OTHER})
 include_directories(
     ${CMAKE_SOURCE_DIR}/discord-rpc/include
     ${CMAKE_SOURCE_DIR}/bcrypt
+    ${CMAKE_SOURCE_DIR}/db
     ${CMAKE_SOURCE_DIR}/bcrypt/crypt_blowfish
+    /usr/include/mariadb 
 )
 
 include_directories(${CMAKE_SOURCE_DIR}/bcrypt)
@@ -27,6 +29,7 @@ include_directories(${CMAKE_SOURCE_DIR}/bcrypt)
 # Source files (exactly as in your g++ command)
 set(SOURCES
     main.cpp
+    db/database.cpp
     welcome.cpp
     env.cpp
     login/login_page.cpp
@@ -45,7 +48,8 @@ set(SOURCES
     discord-rpc/src/serialization.cpp
     discord-rpc/src/connection_unix.cpp
     discord-rpc/src/discord_register_linux.cpp
-)
+
+    )
 
 # Build executable
 add_executable(gtk_hello ${SOURCES})
@@ -53,4 +57,5 @@ add_executable(gtk_hello ${SOURCES})
 
 
 # Link GTKMM libraries
-target_link_libraries(gtk_hello ${GTKMM_LIBRARIES})
+target_link_libraries(gtk_hello ${GTKMM_LIBRARIES}
+mariadb)

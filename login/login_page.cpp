@@ -1,6 +1,7 @@
 #include "login_page.h"
 #include <iostream>
 #include "../register/register.h"
+#include "../db/database.h"
 
 using namespace std;
 
@@ -19,7 +20,16 @@ LoginRequest(string &email, string &password)
         return {" ⛔ Login data are not valid!", false};
     }
 
-    return {"✅ Login was successfull!", true};
+    // DB Call.
+
+    if (verify_login(email))
+    {
+        return {" ✅ Login Was Sucessfull", true};
+    }
+    else
+    {
+        return {" ⛔ failed :( ", false};
+    }
 }
 
 Gtk::Widget *
