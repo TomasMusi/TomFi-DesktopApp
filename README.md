@@ -77,9 +77,9 @@ This project taught me:
 - [x] Password validation
 - [x] .env file support
 - [x] Discord Rich Presence
-- [ ] SQLite or server-based data storage
+- [X] SQLite or server-based data storage
 - [ ] Full dashboard with transaction views
-- [ ] Account syncing with web version
+- [X] Account syncing with web version
 
 ---
 

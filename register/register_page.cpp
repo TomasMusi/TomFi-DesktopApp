@@ -5,6 +5,7 @@
 #include <string>
 #include "../bcrypt/bcrypt.h"
 #include "../env.hpp"
+#include "../db/database.h"
 
 using namespace std;
 
@@ -50,9 +51,14 @@ RegisterResult GetRegister(const string &name, const string &email, const string
         return {" ⛔ Failed to hash password!", false};
     }
 
-    cout << "Hashed Password: " << hash << endl;
-
-    return {" ✅ Registration successfull!", true};
+    if (register_data(name, email, hash))
+    {
+        return {" ✅ Registration Was Sucessfull", true};
+    }
+    else
+    {
+        return {" ⛔ failed :( ", false};
+    }
 }
 
 Gtk::Widget *create_register_page(Gtk::Window &window)
