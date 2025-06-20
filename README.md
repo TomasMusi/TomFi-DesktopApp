@@ -90,19 +90,58 @@ This project taught me:
 ## 📁 Directory Structure
 
 ```
-├── main.cpp
-├── welcome.cpp / welcome.h
-├── login/
-│   └── login_page.cpp / login_page.h
-├── register/
-│   └── register_page.cpp / register_page.h
+.
+├── bcrypt/
+│   ├── bcrypt.c
+│   ├── bcrypt.h
+│   ├── COPYING
+│   ├── crypt_blowfish/
+│   ├── Makefile
+│   └── README
+├── build/
+│   ├── CMakeCache.txt
+│   ├── CMakeFiles/
+│   ├── cmake_install.cmake
+│   ├── gtk_hello
+│   ├── Makefile
+│   ├── README.md
+│   └── style.css
+├── dashboard/
+├── db/
+│   ├── database.cpp
+│   └── database.h
 ├── discord-activity/
-│   └── discord_integration.cpp
-├── env.hpp / env.cpp
-├── style.css
-├── .env
+│   ├── discord_integration.cpp
+│   └── discord_integration.h
+├── discord-rpc/
+│   ├── appveyor.yml
+│   ├── build.py
+│   ├── CMakeLists.txt
+│   ├── documentation/
+│   ├── examples/
+│   ├── include/
+│   ├── LICENSE
+│   ├── README.md
+│   └── src/
+├── keys/
+│   ├── private.pem
+│   └── public.pem
+├── login/
+│   ├── login_page.cpp
+│   └── login_page.h
+├── register/
+│   ├── register_page.cpp
+│   └── register.h
 ├── CMakeLists.txt
-└── .gitignore
+├── env.cpp
+├── env.hpp
+├── gtk_hello
+├── licence.md
+├── main.cpp
+├── README.md
+├── style.css
+├── welcome.cpp
+├── welcome.h
 ```
 
 
