@@ -4,8 +4,117 @@
 #include "../env.hpp"
 #include "../bcrypt/bcrypt.h"
 #include <cstring>
+#include <cstdlib>
+#include <ctime>
+#include <fstream>
+#include <sstream>
+#include <iomanip>
+#include <openssl/rsa.h>
+#include <openssl/pem.h>
+#include <openssl/err.h>
+#include <openssl/bio.h>
+#include <openssl/buffer.h>
 
 using namespace std;
+
+// Generating Credit Card Numbers
+
+string generateFormattedNumber()
+{
+    ostringstream oss;
+
+    srand(static_cast<unsigned int>(time(nullptr))); // seed random once per run
+
+    for (int i = 0; i < 4; ++i)
+    {
+        int group = 1000 + rand() % 9000; // random 4-digit number (1000–9999)
+        oss << setw(4) << setfill('0') << group;
+        if (i < 3)
+        {
+            oss << ' ';
+        }
+    }
+
+    return oss.str();
+}
+
+// Generating Random Pin
+
+int generate_four_digit_number()
+{
+    // Seed the random number generator
+    srand(time(nullptr));
+
+    // Generate and return a number between 1000 and 9999
+    return 1000 + rand() % 9000;
+}
+
+/*
+
+    string card_number = generateFormattedNumber();
+    cout << "Generated card number: " << card_number << endl;
+
+    int number = generate_four_digit_number();
+    cout << "Random 4-digit number: " << number << endl;
+
+*/
+
+// Base64 Encode.
+
+string base64_encode(const unsigned char *input, int length)
+{
+
+    BIO *bio, *b64;
+    BUF_MEM *buffer_ptr;
+
+    b64 = BIO_new(BIO_f_base64());
+    BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL); // no newlines
+    bio = BIO_new(BIO_s_mem());
+    b64 = BIO_push(b64, bio);
+
+    BIO_write(b64, input, length);
+    BIO_flush(b64);
+    BIO_get_mem_ptr(b64, &buffer_ptr);
+
+    std::string result(buffer_ptr->data, buffer_ptr->length);
+    BIO_free_all(b64);
+    return result;
+}
+
+// Encrypt PIN using public key
+string encrypt_pin(const string &pin, const string &pubkey_path)
+{
+    FILE *pubkey_file = fopen(pubkey_path.c_str(), "r");
+    if (!pubkey_file)
+    {
+        cerr << "❌ Failed to open public key" << endl;
+        return "";
+    }
+
+    RSA *rsa = PEM_read_RSA_PUBKEY(pubkey_file, NULL, NULL, NULL);
+    fclose(pubkey_file);
+    if (!rsa)
+    {
+        cerr << "❌ Failed to read public key" << endl;
+        return "";
+    }
+
+    unsigned char encrypted[256];
+    int result = RSA_public_encrypt(pin.size(),
+                                    (unsigned char *)pin.c_str(),
+                                    encrypted,
+                                    rsa,
+                                    RSA_PKCS1_OAEP_PADDING);
+    RSA_free(rsa);
+
+    if (result == -1)
+    {
+        cerr << "❌ Encryption failed\n";
+        return "";
+    }
+
+    return base64_encode(encrypted, result);
+}
 
 bool verify_login(const string &email, const string &password)
 {
@@ -52,7 +161,7 @@ bool verify_login(const string &email, const string &password)
     stmt = mysql_stmt_init(conn);
     if (!stmt)
     {
-        cerr << "❌ mysql_stmt_init() failed\n";
+        cerr << "❌ mysql_stmt_init() failed" << endl;
         mysql_close(conn);
         return false;
     }
@@ -94,7 +203,7 @@ bool verify_login(const string &email, const string &password)
     prepare_meta_result = mysql_stmt_result_metadata(stmt);
     if (!prepare_meta_result)
     {
-        cerr << "❌ Failed to get result metadata\n";
+        cerr << "❌ Failed to get result metadata" << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
         return false;
@@ -195,12 +304,13 @@ bool register_data(const string &name, const string &email, const string &passwo
     MYSQL *conn;
     MYSQL_STMT *stmt;
     MYSQL_BIND bind[8];
+    my_ulonglong user_id = 0;
 
     // Inserting Default Fields.
     string profile_picture = "/pfp/default.png"; // Default avatar path
     string role = "user";                        // Role assigned to all new users
     int is_2fa_enabled = 0;                      // Disabled by default
-    string two_fa_secret = "";
+    string two_fa_secret = "0";
     string created_at = "NOW()"; // We’ll let MySQL insert timestamp (see note below)
 
     // Load env config
@@ -232,6 +342,10 @@ bool register_data(const string &name, const string &email, const string &passwo
         mysql_close(conn);
         return false;
     }
+
+    // Begin transaction
+
+    mysql_autocommit(conn, 0);
 
     // Check if the Email Already exists.
 
@@ -351,7 +465,70 @@ bool register_data(const string &name, const string &email, const string &passwo
     bind[6].buffer_type = MYSQL_TYPE_STRING;
     bind[6].buffer = (void *)two_fa_secret.c_str();
     bind[6].buffer_length = two_fa_secret.length();
+
+    // Execute INSERT INTO Users
     if (mysql_stmt_bind_param(stmt, bind))
+    {
+        cerr << "❌ Bind failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        mysql_close(conn);
+        return false;
+    }
+
+    if (mysql_stmt_execute(stmt))
+    {
+        cerr << "❌ Execute (user insert) failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        mysql_close(conn);
+        return false;
+    }
+
+    string card_number = generateFormattedNumber();
+    int pin = generate_four_digit_number();
+    string encrypted_pin = encrypt_pin(to_string(pin), "../keys/public.pem");
+    string balance = "1000";
+    int is_active = 1;
+
+    user_id = mysql_insert_id(conn);
+    mysql_stmt_close(stmt);
+
+    // Insert into Credit_card
+    const char *card_sql = R"(
+        INSERT INTO Credit_card (user_id, card_number, pin_hash, balance, is_active, created_at)
+        VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    )";
+
+    stmt = mysql_stmt_init(conn);
+    if (!stmt || mysql_stmt_prepare(stmt, card_sql, strlen(card_sql)))
+    {
+        cerr << "❌ Prepare card failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_rollback(conn);
+        mysql_close(conn);
+        return false;
+    }
+
+    MYSQL_BIND card_bind[5];
+    memset(card_bind, 0, sizeof(card_bind));
+
+    card_bind[0].buffer_type = MYSQL_TYPE_LONG;
+    card_bind[0].buffer = &user_id;
+
+    card_bind[1].buffer_type = MYSQL_TYPE_STRING;
+    card_bind[1].buffer = (void *)card_number.c_str();
+    card_bind[1].buffer_length = card_number.length();
+
+    card_bind[2].buffer_type = MYSQL_TYPE_STRING;
+    card_bind[2].buffer = (void *)encrypted_pin.c_str();
+    card_bind[2].buffer_length = encrypted_pin.length();
+
+    card_bind[3].buffer_type = MYSQL_TYPE_STRING;
+    card_bind[3].buffer = (void *)balance.c_str();
+    card_bind[3].buffer_length = balance.length();
+
+    card_bind[4].buffer_type = MYSQL_TYPE_LONG;
+    card_bind[4].buffer = &is_active;
+
+    if (mysql_stmt_bind_param(stmt, card_bind))
     {
         cerr << "❌ Bind failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
@@ -370,6 +547,7 @@ bool register_data(const string &name, const string &email, const string &passwo
     cout << "✅ User registered successfully." << endl;
 
     mysql_stmt_close(stmt);
+    mysql_commit(conn);
     mysql_close(conn);
     return true;
 }

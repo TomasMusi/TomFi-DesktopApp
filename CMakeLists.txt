@@ -51,6 +51,9 @@ set(SOURCES
 
     )
 
+# Find and link OpenSSL
+find_package(OpenSSL REQUIRED)
+
 # Build executable
 add_executable(gtk_hello ${SOURCES})
 
@@ -58,4 +61,6 @@ add_executable(gtk_hello ${SOURCES})
 
 # Link GTKMM libraries
 target_link_libraries(gtk_hello ${GTKMM_LIBRARIES}
-mariadb)
+mariadb
+OpenSSL::Crypto
+)
