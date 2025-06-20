@@ -14,6 +14,7 @@
 #include <openssl/err.h>
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
+#include "../Session/Session.hpp"
 
 using namespace std;
 
@@ -545,6 +546,13 @@ bool register_data(const string &name, const string &email, const string &passwo
     }
 
     cout << "✅ User registered successfully." << endl;
+
+    // middlware
+
+    current_session.is_authenticated = true;
+    current_session.user_id = static_cast<int>(user_id); // from mysql_insert_id
+    current_session.email = email;                       // from function param
+    current_session.role = role;
 
     mysql_stmt_close(stmt);
     mysql_commit(conn);
