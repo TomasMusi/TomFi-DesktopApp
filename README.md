@@ -71,16 +71,20 @@ This project taught me:
 
 ## 📌 Roadmap
 
-- [x] Welcome screen
-- [x] Login form
-- [x] Register form
-- [x] Password validation
-- [x] .env file support
-- [x] Discord Rich Presence
-- [X] SQLite or server-based data storage
-- [ ] Full dashboard with transaction views
-- [X] Account syncing with web version
-
+- [x] **RSA Encryption** for secure PIN and key handling 
+- [x] **Account syncing** with web version via shared DB schema 
+- [x] **.env environment variable system** for secure configuration 
+- [x] **SQLite & MySQL support** for local and remote storage 
+- [x] **Secure user authentication** with password validation (bcrypt) 
+- [x] **GUI creation** using GTK (login, registration, forms) 
+- [x] **Full database integration** with prepared statements and transactions 
+- [x] **Discord Rich Presence** for real-time session display 
+- [ ] **Full-featured dashboard** (account overview, transaction history) 
+- [ ] **Transaction functionality** (send/receive, balance updates) 
+- [ ] **2FA (Two-Factor Authentication)** with TOTP setup 
+- [ ] **Mobile/Desktop notification system** for account activity 
+- [ ] **Analytics panel** with spending charts and category breakdowns 
+- [ ] **JWT-like token session handling** for secure client access 
 ---
 
 ## 📁 Directory Structure
