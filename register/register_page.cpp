@@ -132,6 +132,15 @@ Gtk::Widget *create_register_page(Gtk::Window &window)
                                                   if (result.success)
                                                   {
                                                     show_toast_success(window, result.message);
+
+                                                        // Delay navigation to login page (give time to show the toast)
+                                                        Glib::signal_timeout().connect_once([&window]() {
+                                                        window.remove(); // remove current widget
+                                                        Gtk::Widget *login_ui = create_login_page(window);
+                                                        window.add(*login_ui);
+                                                        window.set_title("TomFi | Login UI");
+                                                        login_ui->show_all();
+                                                        }, 1500); // 1.5 seconds    
                                                   }
                                                   else
                                                   {

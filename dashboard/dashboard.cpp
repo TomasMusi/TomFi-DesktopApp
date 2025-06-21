@@ -1,11 +1,30 @@
 #include <gtkmm.h>
 #include <iostream>
 #include "dashboard.h"
+#include "Session/Session.hpp"
+#include "welcome.h"
 
 using namespace std;
 
 Gtk::Widget *create_dashboard(Gtk::Window &window)
 {
+
+    // Check if user is authenticated
+    if (!current_session.is_authenticated)
+    {
+        show_toast_fail(window, "Access Denied: Please log in.");
+
+        // Redirect to welcome page
+        Gtk::Widget *welcome_ui = create_welcome(window);
+        window.remove(); // remove current content
+        window.add(*welcome_ui);
+        window.set_title("TomFi | Welcome");
+        welcome_ui->show_all();
+
+        // Return something (but it won't be used since window is reset)
+        return welcome_ui;
+    }
+
     // Outer vertical wrapper to center vertically
     auto outer_wrapper = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
     outer_wrapper->set_valign(Gtk::ALIGN_CENTER);

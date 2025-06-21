@@ -14,6 +14,8 @@ pkg_check_modules(GTKMM REQUIRED gtkmm-3.0)
 include_directories(${GTKMM_INCLUDE_DIRS})
 add_definitions(${GTKMM_CFLAGS_OTHER})
 
+include_directories(${PROJECT_SOURCE_DIR})
+
 
 # Add include directories for Discord RPC and cpp-dotenv
 include_directories(

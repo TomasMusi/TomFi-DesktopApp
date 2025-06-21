@@ -79,8 +79,8 @@ create_login_page(Gtk::Window &window)
     login_button->set_size_request(300, 40);
     login_button->signal_clicked().connect([&window, email_entry, pass_entry]()
                                            {
-                                               std::cout << "Email: " << email_entry->get_text() << std::endl;
-                                               std::cout << "Password: " << pass_entry->get_text() << std::endl;
+                                               cout << "Email: " << email_entry->get_text() << endl;
+                                               cout << "Password: " << pass_entry->get_text() << endl;
 
                                                string Email = email_entry->get_text();
                                                string Password = pass_entry->get_text();
