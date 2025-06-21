@@ -29,9 +29,11 @@ include_directories(${CMAKE_SOURCE_DIR}/bcrypt)
 # Source files (exactly as in your g++ command)
 set(SOURCES
     main.cpp
+    Session/Session.cpp
     db/database.cpp
     welcome.cpp
     env.cpp
+    dashboard/dashboard.cpp
     login/login_page.cpp
     register/register_page.cpp
     discord-activity/discord_integration.cpp

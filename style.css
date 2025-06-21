@@ -1,4 +1,4 @@
-/* Welcome Page Style CSS*/
+/* ─────────────── WELCOME-PAGE STYLES ─────────────── */
 #welcome-title {
     font-size: 32px;
     font-weight: bold;
@@ -19,7 +19,7 @@
 }
 
 
-/* Login Page Style CSS */
+/* ─────────────── LOGIN STYLES ─────────────── */
 
 
 #login-card {
@@ -58,7 +58,7 @@ label.link {
 }
 
 
-/* Register Page GUI */
+/* ─────────────── REGISTER STYLES ─────────────── */
 
 #register-card {
     background: #ffffff;
@@ -115,4 +115,87 @@ label.link {
 .toast-label-fail {
     font-weight: bold;
     font-size: 14px;
+}
+
+/* ─────────────── DASHBOARD STYLES ─────────────── */
+
+#app-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #1d4ed8;
+}
+
+#sidebar-button {
+    background: #ffffff;
+    color: #1e3a8a;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 10px;
+    font-weight: 600;
+    transition: background 0.3s;
+}
+
+#sidebar-button:hover {
+    background: #e0e7ff;
+}
+
+#dashboard-welcome {
+    font-size: 24px;
+    font-weight: bold;
+    color: #1e293b;
+    margin-bottom: 10px;
+}
+
+GtkFrame {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid #d1d5db;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+GtkLabel {
+    font-size: 14px;
+    color: #334155;
+}
+
+#card-balance {
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+}
+
+#credit-card-frame {
+    background: linear-gradient(to right, #6366f1, #3b82f6);
+    color: white;
+    border-radius: 16px;
+    padding: 20px;
+}
+
+#add-transaction {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+#add-transaction:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+#dashboard-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid #d1d5db;
+}
+
+#dashboard-card-wrapper {
+    background-color: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    /* simulate a soft shadow */
 }
