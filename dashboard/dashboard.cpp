@@ -1,5 +1,6 @@
 #include <gtkmm.h>
 #include <iostream>
+#include <string>
 #include "dashboard.h"
 #include "Session/Session.hpp"
 #include "welcome.h"
@@ -24,6 +25,14 @@ Gtk::Widget *create_dashboard(Gtk::Window &window)
         // Return something (but it won't be used since window is reset)
         return welcome_ui;
     }
+
+    // User
+    string welcome_text = "Welcome " + current_session.name + "!";
+    string card_holder_text = "CardHolder: " + current_session.name;
+
+    // Card
+    string card_number = current_session.card_number;
+    string card_balance = "$" + current_session.balance;
 
     // Outer vertical wrapper to center vertically
     auto outer_wrapper = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
@@ -81,7 +90,7 @@ Gtk::Widget *create_dashboard(Gtk::Window &window)
 
     // Welcome
     auto header = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
-    auto welcome = Gtk::make_managed<Gtk::Label>("Welcome tomas!");
+    auto welcome = Gtk::make_managed<Gtk::Label>(welcome_text);
     welcome->set_name("dashboard-welcome");
     header->pack_start(*welcome, Gtk::PACK_SHRINK);
     content_box->pack_start(*header, Gtk::PACK_SHRINK);
@@ -109,17 +118,17 @@ Gtk::Widget *create_dashboard(Gtk::Window &window)
     auto card_box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
     card_box->set_spacing(5);
 
-    auto balance = Gtk::make_managed<Gtk::Label>("$2073");
+    auto balance = Gtk::make_managed<Gtk::Label>(card_balance);
     balance->set_name("card-balance");
     card_box->pack_start(*balance, Gtk::PACK_SHRINK);
 
-    auto card_number = Gtk::make_managed<Gtk::Label>("1548 4286 1741 5568");
-    card_box->pack_start(*card_number, Gtk::PACK_SHRINK);
+    auto card_number_label = Gtk::make_managed<Gtk::Label>(card_number);
+    card_box->pack_start(*card_number_label, Gtk::PACK_SHRINK);
 
     auto expiry = Gtk::make_managed<Gtk::Label>("EXP: 12/24   CVV: ***");
     card_box->pack_start(*expiry, Gtk::PACK_SHRINK);
 
-    auto holder = Gtk::make_managed<Gtk::Label>("Cardholder: tomas");
+    auto holder = Gtk::make_managed<Gtk::Label>(card_holder_text);
     card_box->pack_start(*holder, Gtk::PACK_SHRINK);
 
     auto add_btn = Gtk::make_managed<Gtk::Button>("+ New transaction");

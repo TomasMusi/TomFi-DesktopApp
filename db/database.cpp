@@ -279,19 +279,74 @@ bool verify_login(const string &email, const string &password)
         return false;
     }
 
-    // ✅ Successful login
-    cout << "✅ User found!" << endl;
-    cout << "Name: " << name << endl;
-    cout << "Profile Picture: " << profile_picture << endl;
-    cout << "ID: " << id << endl;
-    cout << "Email: " << email_db << endl;
-    cout << "Role: " << role << endl;
-    cout << "2FA Enabled: " << twofa_enabled << endl;
-    cout << "2FA Secret: " << twofa_secret << endl;
-    cout << "Created At: " << created_at << endl;
+    // Middleware:
+    current_session.is_authenticated = true;
+    current_session.email = email;
+    current_session.role = role;
+    current_session.name = name;
+
+    // Cannot use the same conn!
+    mysql_free_result(prepare_meta_result);
+    mysql_stmt_close(stmt);
+
+    // ================= FETCH CREDIT CARD INFO =================
+    const char *card_sql = "SELECT card_number, balance, is_active FROM Credit_card WHERE user_id = ? LIMIT 1";
+    stmt = mysql_stmt_init(conn);
+    if (!stmt || mysql_stmt_prepare(stmt, card_sql, strlen(card_sql)))
+    {
+        cerr << "❌ Prepare card failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_close(conn);
+        return false;
+    }
+
+    MYSQL_BIND card_param[1], card_result[3];
+    memset(card_param, 0, sizeof(card_param));
+    memset(card_result, 0, sizeof(card_result));
+
+    card_param[0].buffer_type = MYSQL_TYPE_LONG;
+    card_param[0].buffer = &id;
+
+    char card_number[100], balance[100];
+    int is_active;
+
+    card_result[0].buffer_type = MYSQL_TYPE_STRING;
+    card_result[0].buffer = card_number;
+    card_result[0].buffer_length = sizeof(card_number);
+
+    card_result[1].buffer_type = MYSQL_TYPE_STRING;
+    card_result[1].buffer = balance;
+    card_result[1].buffer_length = sizeof(balance);
+
+    card_result[2].buffer_type = MYSQL_TYPE_LONG;
+    card_result[2].buffer = &is_active;
+
+    if (mysql_stmt_bind_param(stmt, card_param) ||
+        mysql_stmt_bind_result(stmt, card_result) ||
+        mysql_stmt_execute(stmt))
+    {
+        cerr << "❌ Card info query failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        mysql_close(conn);
+        return false;
+    }
+
+    if (mysql_stmt_fetch(stmt) == 0)
+    {
+        current_session.card_number = card_number;
+        current_session.balance = balance;
+        current_session.is_active = is_active;
+
+        cout << "💳 Card Info Loaded:\n";
+        cout << "Card Number: " << card_number << endl;
+        cout << "Balance: " << balance << endl;
+        cout << "Active: " << is_active << endl;
+    }
+    else
+    {
+        cerr << "⚠️ No card found for user_id: " << id << endl;
+    }
 
     // Clean up
-    mysql_free_result(prepare_meta_result);
     mysql_stmt_close(stmt);
     mysql_close(conn);
     return true;
@@ -546,13 +601,6 @@ bool register_data(const string &name, const string &email, const string &passwo
     }
 
     cout << "✅ User registered successfully." << endl;
-
-    // middlware
-
-    current_session.is_authenticated = true;
-    current_session.user_id = static_cast<int>(user_id); // from mysql_insert_id
-    current_session.email = email;                       // from function param
-    current_session.role = role;
 
     mysql_stmt_close(stmt);
     mysql_commit(conn);

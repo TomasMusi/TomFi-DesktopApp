@@ -2,6 +2,7 @@
 #include <iostream>
 #include "../register/register.h"
 #include "../db/database.h"
+#include "../dashboard/dashboard.h"
 
 using namespace std;
 
@@ -91,6 +92,12 @@ create_login_page(Gtk::Window &window)
                                                if (result.success)
                                                {
                                                    show_toast_success(window, result.message);
+
+                                                    window.remove(); // Remove current login page
+                                                    Gtk::Widget *dashboard_ui = create_dashboard(window);; // Load dashboard
+                                                    window.add(*dashboard_ui);
+                                                    window.set_title("TomFi | Dashboard");
+                                                    dashboard_ui->show_all();
                                                }
                                                else
                                                {
