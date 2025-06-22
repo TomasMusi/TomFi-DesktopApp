@@ -3,8 +3,16 @@
 #define SESSION_HPP
 
 #include <string>
+#include <vector>
 
 using namespace std;
+
+struct Transaction
+{
+    string description;
+    string amount;
+    string direction;
+};
 
 struct Session
 {
@@ -19,6 +27,10 @@ struct Session
     int is_active = 1;
     string balance;
     string card_number;
+
+    // Transaction
+
+    vector<Transaction> transactions;
 };
 
 extern Session current_session;

@@ -348,6 +348,61 @@ bool verify_login(const string &email, const string &password)
 
     // Clean up
     mysql_stmt_close(stmt);
+
+    // ================= FETCH TRANSACTIONS =================
+    const char *tx_sql = "SELECT description, amount, direction FROM Transactions WHERE sender_account_id = ? OR receiver_user_id = ? ORDER BY timestamp DESC";
+    stmt = mysql_stmt_init(conn);
+    if (!stmt || mysql_stmt_prepare(stmt, tx_sql, strlen(tx_sql)))
+    {
+        cerr << "❌ Prepare transaction query failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_close(conn);
+        return true; // Continue even if no transactions found
+    }
+
+    MYSQL_BIND tx_param[2], tx_result[3];
+    memset(tx_param, 0, sizeof(tx_param));
+    memset(tx_result, 0, sizeof(tx_result));
+
+    tx_param[0].buffer_type = MYSQL_TYPE_LONG;
+    tx_param[0].buffer = &id;
+
+    tx_param[1].buffer_type = MYSQL_TYPE_LONG;
+    tx_param[1].buffer = &id;
+
+    char description[226], amount[51], direction[6];
+
+    tx_result[0].buffer_type = MYSQL_TYPE_STRING;
+    tx_result[0].buffer = description;
+    tx_result[0].buffer_length = sizeof(description);
+
+    tx_result[1].buffer_type = MYSQL_TYPE_STRING;
+    tx_result[1].buffer = amount;
+    tx_result[1].buffer_length = sizeof(amount);
+
+    tx_result[2].buffer_type = MYSQL_TYPE_STRING;
+    tx_result[2].buffer = direction;
+    tx_result[2].buffer_length = sizeof(direction);
+
+    if (mysql_stmt_bind_param(stmt, tx_param) ||
+        mysql_stmt_bind_result(stmt, tx_result) ||
+        mysql_stmt_execute(stmt))
+    {
+        cerr << "❌ Transaction fetch failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        mysql_close(conn);
+        return true;
+    }
+
+    current_session.transactions.clear();
+    while (mysql_stmt_fetch(stmt) == 0)
+    {
+        current_session.transactions.push_back(Transaction{
+            string(description),
+            string(amount),
+            string(direction)});
+    }
+
+    mysql_stmt_close(stmt);
     mysql_close(conn);
     return true;
 }
@@ -367,7 +422,7 @@ bool register_data(const string &name, const string &email, const string &passwo
     string role = "user";                        // Role assigned to all new users
     int is_2fa_enabled = 0;                      // Disabled by default
     string two_fa_secret = "0";
-    string created_at = "NOW()"; // We’ll let MySQL insert timestamp (see note below)
+    string created_at = "NOW()"; // We’ll let MySQL insert timestamp
 
     // Load env config
 
