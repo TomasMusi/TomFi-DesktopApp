@@ -39,6 +39,7 @@ set(SOURCES
     login/login_page.cpp
     register/register_page.cpp
     discord-activity/discord_integration.cpp
+    dashboard/Transaction/transaction.cpp
 
     # bcrypt + blowfish
     bcrypt/bcrypt.c

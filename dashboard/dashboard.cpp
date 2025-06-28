@@ -4,6 +4,7 @@
 #include "dashboard.h"
 #include "Session/Session.hpp"
 #include "welcome.h"
+#include "Transaction/transaction.h"
 
 using namespace std;
 
@@ -66,12 +67,52 @@ Gtk::Widget *create_dashboard(Gtk::Window &window)
     sidebar->pack_start(*app_title, Gtk::PACK_SHRINK);
 
     vector<string> nav_items = {"Dashboard", "Transactions", "Mail", "Wallet", "Settings"};
-    for (const auto &item : nav_items)
-    {
-        auto btn = Gtk::make_managed<Gtk::Button>(item);
-        btn->set_name(item == "Dashboard" ? "side-button-current" : "sidebar-button");
-        sidebar->pack_start(*btn, Gtk::PACK_SHRINK);
-    }
+    // Dashboard Button
+    auto dashboard_btn = Gtk::make_managed<Gtk::Button>("Dashboard");
+    dashboard_btn->set_name("side-button-current");
+    dashboard_btn->set_halign(Gtk::ALIGN_START);
+    dashboard_btn->signal_clicked().connect([&window]()
+                                            {
+    Gtk::Widget *dashboard_ui = create_dashboard(window);
+    window.remove();
+    window.add(*dashboard_ui);
+    window.set_title("TomFi | Dashboard");
+    dashboard_ui->show_all(); });
+    sidebar->pack_start(*dashboard_btn, Gtk::PACK_SHRINK);
+
+    // Transactions Button
+    auto transactions_btn = Gtk::make_managed<Gtk::Button>("Transactions");
+    transactions_btn->set_name("sidebar-button");
+    transactions_btn->set_halign(Gtk::ALIGN_START);
+    transactions_btn->signal_clicked().connect([&window]()
+                                               {
+    Gtk::Widget *transactions_ui = create_transactions_ui(window);
+    window.remove();
+    window.add(*transactions_ui);
+    window.set_title("TomFi | Transactions");
+    transactions_ui->show_all(); });
+    sidebar->pack_start(*transactions_btn, Gtk::PACK_SHRINK);
+
+    // Mail Button
+    auto mail_btn = Gtk::make_managed<Gtk::Button>("Mail");
+    mail_btn->set_name("sidebar-button");
+    mail_btn->set_halign(Gtk::ALIGN_START);
+    // TODO: connect mail_btn->signal_clicked() to mail page if exists
+    sidebar->pack_start(*mail_btn, Gtk::PACK_SHRINK);
+
+    // Wallet Button
+    auto wallet_btn = Gtk::make_managed<Gtk::Button>("Wallet");
+    wallet_btn->set_name("sidebar-button");
+    wallet_btn->set_halign(Gtk::ALIGN_START);
+    // TODO: connect wallet_btn->signal_clicked() to wallet page
+    sidebar->pack_start(*wallet_btn, Gtk::PACK_SHRINK);
+
+    // Settings Button
+    auto settings_btn = Gtk::make_managed<Gtk::Button>("Settings");
+    settings_btn->set_name("sidebar-button");
+    settings_btn->set_halign(Gtk::ALIGN_START);
+    // TODO: connect settings_btn->signal_clicked() to settings page
+    sidebar->pack_start(*settings_btn, Gtk::PACK_SHRINK);
 
     sidebar_wrapper->add(*sidebar);
     main_box->pack_start(*sidebar_wrapper, Gtk::PACK_SHRINK);

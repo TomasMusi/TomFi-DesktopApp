@@ -9,9 +9,11 @@ using namespace std;
 
 struct Transaction
 {
-    string description;
-    string amount;
-    string direction;
+    string date;        // from timestamp
+    string description; // varchar(225)
+    string category;    // varchar(50)
+    string amount;      // varchar(50)
+    string direction;   // enum('in','out')
 };
 
 struct Session
@@ -28,8 +30,7 @@ struct Session
     string balance;
     string card_number;
 
-    // Transaction
-
+    // Transactions
     vector<Transaction> transactions;
 };
 
