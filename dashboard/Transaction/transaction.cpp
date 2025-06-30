@@ -12,8 +12,8 @@ using namespace std;
 vector<Transaction> fetch_transactions()
 {
     return {
-        {"deposit", "541.00", "in"},
-        {"Pizza", "150.00", "out"},
+        {"June 27, 2025", "deposit", "other", "541.00", "in"},
+        {"June 27, 2025", "Pizza", "Friend", "150.00", "out"},
     };
 }
 
@@ -70,7 +70,6 @@ Gtk::Widget *create_transactions_ui(Gtk::Window &window)
     app_title->set_name("app-title");
     sidebar->pack_start(*app_title, Gtk::PACK_SHRINK);
 
-    // Dashboard Button
     auto dashboard_btn = Gtk::make_managed<Gtk::Button>("Dashboard");
     dashboard_btn->set_name("sidebar-button");
     dashboard_btn->set_halign(Gtk::ALIGN_START);
@@ -83,25 +82,21 @@ Gtk::Widget *create_transactions_ui(Gtk::Window &window)
         dashboard_ui->show_all(); });
     sidebar->pack_start(*dashboard_btn, Gtk::PACK_SHRINK);
 
-    // Transactions Button (current)
     auto transactions_btn = Gtk::make_managed<Gtk::Button>("Transactions");
     transactions_btn->set_name("side-button-current");
     transactions_btn->set_halign(Gtk::ALIGN_START);
     sidebar->pack_start(*transactions_btn, Gtk::PACK_SHRINK);
 
-    // Mail Button
     auto mail_btn = Gtk::make_managed<Gtk::Button>("Mail");
     mail_btn->set_name("sidebar-button");
     mail_btn->set_halign(Gtk::ALIGN_START);
     sidebar->pack_start(*mail_btn, Gtk::PACK_SHRINK);
 
-    // Wallet Button
     auto wallet_btn = Gtk::make_managed<Gtk::Button>("Wallet");
     wallet_btn->set_name("sidebar-button");
     wallet_btn->set_halign(Gtk::ALIGN_START);
     sidebar->pack_start(*wallet_btn, Gtk::PACK_SHRINK);
 
-    // Settings Button
     auto settings_btn = Gtk::make_managed<Gtk::Button>("Settings");
     settings_btn->set_name("sidebar-button");
     settings_btn->set_halign(Gtk::ALIGN_START);
@@ -123,7 +118,8 @@ Gtk::Widget *create_transactions_ui(Gtk::Window &window)
     content_box->pack_start(*heading, Gtk::PACK_SHRINK);
 
     auto table_frame = Gtk::make_managed<Gtk::Frame>();
-    table_frame->set_shadow_type(Gtk::SHADOW_IN);
+    table_frame->set_name("transaction-table-frame");
+    table_frame->set_shadow_type(Gtk::SHADOW_NONE);
 
     auto scrolled = Gtk::make_managed<Gtk::ScrolledWindow>();
     scrolled->set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
@@ -137,40 +133,42 @@ Gtk::Widget *create_transactions_ui(Gtk::Window &window)
     list->set_margin_start(10);
     list->set_margin_end(10);
 
-    // Headers
-    vector<string> headers = {"Description", "Amount"};
+    vector<string> headers = {"Date", "Description", "Category", "Amount"};
     for (size_t i = 0; i < headers.size(); ++i)
     {
-        auto label = Gtk::make_managed<Gtk::Label>(headers[i]);
-        label->set_markup("<b>" + headers[i] + "</b>");
-        list->attach(*label, i, 0, 1, 1);
+        auto header_label = Gtk::make_managed<Gtk::Label>(headers[i]);
+        header_label->set_markup("<b>" + headers[i] + "</b>");
+        header_label->set_name("table-header");
+        list->attach(*header_label, i, 0, 1, 1);
     }
 
-    // Transactions
     auto transactions = fetch_transactions();
     int row = 1;
     for (const auto &tx : transactions)
     {
-        auto row_frame = Gtk::make_managed<Gtk::Frame>();
-        row_frame->set_name("transaction-row-frame");
-        row_frame->set_shadow_type(Gtk::SHADOW_NONE);
+        for (int col = 0; col < 4; ++col)
+        {
+            string text;
+            string css_class = "table-cell"; // default
 
-        auto row_box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
-        row_box->set_spacing(16);
+            if (col == 0)
+                text = tx.date;
+            else if (col == 1)
+                text = tx.description;
+            else if (col == 2)
+                text = tx.category;
+            else if (col == 3)
+            {
+                text = (tx.direction == "out" ? "-$" : "+$") + tx.amount;
+                css_class = tx.direction == "out" ? "amount-out" : "amount-in";
+            }
 
-        auto desc_label = Gtk::make_managed<Gtk::Label>(tx.description);
-        desc_label->set_halign(Gtk::ALIGN_START);
-        desc_label->set_hexpand(true);
-
-        auto amount_label = Gtk::make_managed<Gtk::Label>((tx.direction == "out" ? "-$" : "+$") + tx.amount);
-        amount_label->set_name(tx.direction == "out" ? "amount-out" : "amount-in");
-        amount_label->set_halign(Gtk::ALIGN_END);
-
-        row_box->pack_start(*desc_label, Gtk::PACK_EXPAND_WIDGET);
-        row_box->pack_start(*amount_label, Gtk::PACK_SHRINK);
-
-        row_frame->add(*row_box);
-        list->attach(*row_frame, 0, row, 2, 1); // Span across 2 columns
+            auto cell = Gtk::make_managed<Gtk::Label>(text);
+            cell->set_name(css_class);
+            cell->set_hexpand(true);
+            cell->set_halign(Gtk::ALIGN_FILL);
+            list->attach(*cell, col, row, 1, 1);
+        }
         ++row;
     }
 
