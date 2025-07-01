@@ -350,39 +350,56 @@ bool verify_login(const string &email, const string &password)
     mysql_stmt_close(stmt);
 
     // ================= FETCH TRANSACTIONS =================
-    const char *tx_sql = "SELECT description, amount, direction FROM Transactions WHERE sender_account_id = ? OR receiver_user_id = ? ORDER BY timestamp DESC";
+    const char *tx_sql = R"(
+    SELECT timestamp, description, category, amount, direction
+    FROM Transactions
+    WHERE sender_account_id = ? OR receiver_user_id = ?
+    ORDER BY timestamp DESC
+)";
+
     stmt = mysql_stmt_init(conn);
     if (!stmt || mysql_stmt_prepare(stmt, tx_sql, strlen(tx_sql)))
     {
         cerr << "❌ Prepare transaction query failed: " << mysql_stmt_error(stmt) << endl;
         mysql_close(conn);
-        return true; // Continue even if no transactions found
+        return true;
     }
 
-    MYSQL_BIND tx_param[2], tx_result[3];
+    // Bind input parameters
+    MYSQL_BIND tx_param[2];
     memset(tx_param, 0, sizeof(tx_param));
-    memset(tx_result, 0, sizeof(tx_result));
-
     tx_param[0].buffer_type = MYSQL_TYPE_LONG;
     tx_param[0].buffer = &id;
-
     tx_param[1].buffer_type = MYSQL_TYPE_LONG;
     tx_param[1].buffer = &id;
 
-    char description[226], amount[51], direction[6];
+    // Bind output fields
+    char timestamp[32], description[226], category[64], amount[64], direction[10];
+
+    MYSQL_BIND tx_result[5];
+    memset(tx_result, 0, sizeof(tx_result));
 
     tx_result[0].buffer_type = MYSQL_TYPE_STRING;
-    tx_result[0].buffer = description;
-    tx_result[0].buffer_length = sizeof(description);
+    tx_result[0].buffer = timestamp;
+    tx_result[0].buffer_length = sizeof(timestamp);
 
     tx_result[1].buffer_type = MYSQL_TYPE_STRING;
-    tx_result[1].buffer = amount;
-    tx_result[1].buffer_length = sizeof(amount);
+    tx_result[1].buffer = description;
+    tx_result[1].buffer_length = sizeof(description);
 
     tx_result[2].buffer_type = MYSQL_TYPE_STRING;
-    tx_result[2].buffer = direction;
-    tx_result[2].buffer_length = sizeof(direction);
+    tx_result[2].buffer = category;
+    tx_result[2].buffer_length = sizeof(category);
 
+    tx_result[3].buffer_type = MYSQL_TYPE_STRING;
+    tx_result[3].buffer = amount;
+    tx_result[3].buffer_length = sizeof(amount);
+
+    tx_result[4].buffer_type = MYSQL_TYPE_STRING;
+    tx_result[4].buffer = direction;
+    tx_result[4].buffer_length = sizeof(direction);
+
+    // Execute and bind
     if (mysql_stmt_bind_param(stmt, tx_param) ||
         mysql_stmt_bind_result(stmt, tx_result) ||
         mysql_stmt_execute(stmt))
@@ -393,11 +410,14 @@ bool verify_login(const string &email, const string &password)
         return true;
     }
 
+    // Store results
     current_session.transactions.clear();
     while (mysql_stmt_fetch(stmt) == 0)
     {
         current_session.transactions.push_back(Transaction{
+            string(timestamp),
             string(description),
+            string(category),
             string(amount),
             string(direction)});
     }

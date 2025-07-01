@@ -6,15 +6,22 @@
 #include "transaction.h"
 #include "welcome.h"
 #include "dashboard/dashboard.h"
-
+#include <sstream>
+#include <iomanip>
 using namespace std;
 
-vector<Transaction> fetch_transactions()
+string format_date(const string &raw_date)
 {
-    return {
-        {"June 27, 2025", "deposit", "other", "541.00", "in"},
-        {"June 27, 2025", "Pizza", "Friend", "150.00", "out"},
-    };
+    tm tm = {};
+    istringstream ss(raw_date);
+    ss >> get_time(&tm, "%Y-%m-%d %H:%M:%S");
+
+    if (ss.fail())
+        return raw_date; // fallback if format fails
+
+    ostringstream formatted;
+    formatted << put_time(&tm, "%B %d, %Y"); // "June 27, 2025"
+    return formatted.str();
 }
 
 Gtk::Widget *create_transactions_ui(Gtk::Window &window)
@@ -142,34 +149,49 @@ Gtk::Widget *create_transactions_ui(Gtk::Window &window)
         list->attach(*header_label, i, 0, 1, 1);
     }
 
-    auto transactions = fetch_transactions();
     int row = 1;
-    for (const auto &tx : transactions)
+    int tx_count = 0;
+
+    if (current_session.transactions.empty())
     {
-        for (int col = 0; col < 4; ++col)
+        auto none = Gtk::make_managed<Gtk::Label>("No transactions available");
+        none->set_name("dashboard-no-tx");
+        none->set_hexpand(true);
+        none->set_halign(Gtk::ALIGN_CENTER);
+        list->attach(*none, 0, row, 4, 1);
+    }
+    else
+    {
+        for (const auto &tx : current_session.transactions)
         {
-            string text;
-            string css_class = "table-cell"; // default
+            if (tx_count++ >= 10)
+                break;
 
-            if (col == 0)
-                text = tx.date;
-            else if (col == 1)
-                text = tx.description;
-            else if (col == 2)
-                text = tx.category;
-            else if (col == 3)
+            for (int col = 0; col < 4; ++col)
             {
-                text = (tx.direction == "out" ? "-$" : "+$") + tx.amount;
-                css_class = tx.direction == "out" ? "amount-out" : "amount-in";
-            }
+                std::string text;
+                std::string css_class = "table-cell";
 
-            auto cell = Gtk::make_managed<Gtk::Label>(text);
-            cell->set_name(css_class);
-            cell->set_hexpand(true);
-            cell->set_halign(Gtk::ALIGN_FILL);
-            list->attach(*cell, col, row, 1, 1);
+                if (col == 0)
+                    text = format_date(tx.date); // formatted date
+                else if (col == 1)
+                    text = tx.description;
+                else if (col == 2)
+                    text = tx.category;
+                else if (col == 3)
+                {
+                    text = (tx.direction == "out" ? "-$" : "+$") + tx.amount;
+                    css_class = tx.direction == "out" ? "amount-out" : "amount-in";
+                }
+
+                auto cell = Gtk::make_managed<Gtk::Label>(text);
+                cell->set_name(css_class);
+                cell->set_hexpand(true);
+                cell->set_halign(Gtk::ALIGN_FILL);
+                list->attach(*cell, col, row, 1, 1);
+            }
+            ++row;
         }
-        ++row;
     }
 
     scrolled->add(*list);
