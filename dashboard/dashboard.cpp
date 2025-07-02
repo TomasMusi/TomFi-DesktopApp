@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include "dashboard.h"
+#include "chart/chart.h"
 #include "Session/Session.hpp"
 #include "welcome.h"
 #include "Transaction/transaction.h"
@@ -97,6 +98,13 @@ Gtk::Widget *create_dashboard(Gtk::Window &window)
     auto mail_btn = Gtk::make_managed<Gtk::Button>("Mail");
     mail_btn->set_name("sidebar-button");
     mail_btn->set_halign(Gtk::ALIGN_START);
+    mail_btn->signal_clicked().connect([&window]()
+                                       {
+        Gtk::Widget *chart_ui = create_chart_webview(window);
+        window.remove();
+        window.add(*chart_ui);
+        window.set_title("TomFi | Charts");
+        chart_ui->show_all(); });
     // TODO: connect mail_btn->signal_clicked() to mail page if exists
     sidebar->pack_start(*mail_btn, Gtk::PACK_SHRINK);
 

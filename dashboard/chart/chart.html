@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Transaction Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #f9fafb;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+
+        #chart-container {
+            width: 400px;
+            margin: 0 auto;
+        }
+
+        #no-data {
+            font-size: 18px;
+            color: #9ca3af;
+            margin-top: 100px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="chart-container">
+        <canvas id="acquisitions"></canvas>
+        <div id="no-data" style="display: none;">Sorry, doesn't have enough data.</div>
+    </div>
+
+    <script>
+        function renderChart(data) {
+            let friend = 0;
+            let food = 0;
+            let sports = 0;
+            let other = 0;
+
+            for (const trx of data.transactions) {
+                switch (trx.category) {
+                    case 'Friend': friend++; break;
+                    case 'Food': food++; break;
+                    case 'Sports': sports++; break;
+                    default: other++; break;
+                }
+            }
+
+            const total = friend + food + sports + other;
+            if (total === 0) {
+                document.getElementById("acquisitions").style.display = "none";
+                document.getElementById("no-data").style.display = "block";
+                return;
+            }
+
+            const chartData = {
+                labels: ['Friend', 'Food', 'Sports', 'Other'],
+                datasets: [{
+                    label: 'Transaction Distribution',
+                    data: [friend, food, sports, other],
+                    backgroundColor: [
+                        '#4F46E5',
+                        '#FBBF24',
+                        '#34D399',
+                        '#A78BFA'
+                    ],
+                    borderColor: '#fff',
+                    borderWidth: 1
+                }]
+            };
+
+            const ctx = document.getElementById('acquisitions');
+            new Chart(ctx, {
+                type: 'pie',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: true }
+                    }
+                }
+            });
+        }
+
+        // Wait for C++ to inject window.injectedData
+        document.addEventListener("DOMContentLoaded", function () {
+            if (window.injectedData) {
+                renderChart(window.injectedData);
+            } else {
+                // fallback if injection fails
+                document.getElementById("acquisitions").style.display = "none";
+                document.getElementById("no-data").style.display = "block";
+            }
+        });
+    </script>
+
+</body>
+
+</html>

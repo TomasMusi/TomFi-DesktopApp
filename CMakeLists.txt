@@ -3,32 +3,37 @@ project(gtk_hello_app)
 
 set(CMAKE_CXX_STANDARD 17)
 
-# Enable warnings
+# Enable compiler warnings
 add_compile_options(-Wall -Wextra)
 
-# Find GTKMM using pkg-config
+# ─── GTKMM ───────────────────────────────────────────
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GTKMM REQUIRED gtkmm-3.0)
-
-# Add GTKMM include directories and compiler flags
 include_directories(${GTKMM_INCLUDE_DIRS})
 add_definitions(${GTKMM_CFLAGS_OTHER})
 
+# ─── WebKitGTK ──────────────────────────────────────
+pkg_check_modules(WEBKIT2GTK REQUIRED webkit2gtk-4.1)
+include_directories(${WEBKIT2GTK_INCLUDE_DIRS})
+add_definitions(${WEBKIT2GTK_CFLAGS_OTHER})
+include_directories(/usr/include/webkitgtk-4.1) # Manual fallback include
+
+# ─── JsonCpp ────────────────────────────────────────
+pkg_check_modules(JSONCPP REQUIRED jsoncpp)
+include_directories(${JSONCPP_INCLUDE_DIRS})
+add_definitions(${JSONCPP_CFLAGS_OTHER})
+
+# ─── Project includes ───────────────────────────────
 include_directories(${PROJECT_SOURCE_DIR})
-
-
-# Add include directories for Discord RPC and cpp-dotenv
 include_directories(
     ${CMAKE_SOURCE_DIR}/discord-rpc/include
     ${CMAKE_SOURCE_DIR}/bcrypt
-    ${CMAKE_SOURCE_DIR}/db
     ${CMAKE_SOURCE_DIR}/bcrypt/crypt_blowfish
-    /usr/include/mariadb 
+    ${CMAKE_SOURCE_DIR}/db
+    /usr/include/mariadb
 )
 
-include_directories(${CMAKE_SOURCE_DIR}/bcrypt)
-
-# Source files (exactly as in your g++ command)
+# ─── Source files ───────────────────────────────────
 set(SOURCES
     main.cpp
     Session/Session.cpp
@@ -36,12 +41,13 @@ set(SOURCES
     welcome.cpp
     env.cpp
     dashboard/dashboard.cpp
+    dashboard/chart/chart.cpp
     login/login_page.cpp
     register/register_page.cpp
     discord-activity/discord_integration.cpp
     dashboard/Transaction/transaction.cpp
 
-    # bcrypt + blowfish
+    # bcrypt
     bcrypt/bcrypt.c
     bcrypt/crypt_blowfish/crypt_blowfish.c
     bcrypt/crypt_blowfish/crypt_gensalt.c
@@ -53,19 +59,19 @@ set(SOURCES
     discord-rpc/src/serialization.cpp
     discord-rpc/src/connection_unix.cpp
     discord-rpc/src/discord_register_linux.cpp
+)
 
-    )
-
-# Find and link OpenSSL
+# ─── OpenSSL ────────────────────────────────────────
 find_package(OpenSSL REQUIRED)
 
-# Build executable
+# ─── Executable ─────────────────────────────────────
 add_executable(gtk_hello ${SOURCES})
 
-
-
-# Link GTKMM libraries
-target_link_libraries(gtk_hello ${GTKMM_LIBRARIES}
-mariadb
-OpenSSL::Crypto
+# ─── Link Libraries ─────────────────────────────────
+target_link_libraries(gtk_hello
+    ${GTKMM_LIBRARIES}
+    ${WEBKIT2GTK_LIBRARIES}
+    ${JSONCPP_LIBRARIES}
+    mariadb
+    OpenSSL::Crypto
 )
