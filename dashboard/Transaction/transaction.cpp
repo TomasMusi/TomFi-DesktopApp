@@ -133,8 +133,8 @@ Gtk::Widget *create_transactions_ui(Gtk::Window &window)
     scrolled->set_min_content_height(300);
 
     auto list = Gtk::make_managed<Gtk::Grid>();
-    list->set_row_spacing(16);
-    list->set_column_spacing(16);
+    list->set_row_spacing(16); // or even 0
+    list->set_column_spacing(0);
     list->set_margin_top(10);
     list->set_margin_bottom(10);
     list->set_margin_start(10);
