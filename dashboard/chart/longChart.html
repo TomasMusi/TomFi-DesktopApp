@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Money In / Money Out</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            background-color: #f9fafb;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #chart-container {
+            width: 100%;
+            height: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        #no-data {
+            font-size: 16px;
+            color: #9ca3af;
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="chart-container">
+        <canvas id="sorted"></canvas>
+        <div id="no-data" style="display: none;">Sorry, not enough transaction data to display the chart.</div>
+    </div>
+
+    <script>
+        const injectedData = window.injectedData || {
+            transactions: [
+                { timestamp: '2025-07-01T12:00:00Z', amount: '150.00', direction: 'in' },
+                { timestamp: '2025-07-02T12:00:00Z', amount: '90.00', direction: 'out' },
+                { timestamp: '2025-07-02T18:00:00Z', amount: '50.00', direction: 'in' },
+                { timestamp: '2025-07-03T12:00:00Z', amount: '120.00', direction: 'out' }
+            ]
+        };
+
+        function renderMoneyChart(data) {
+            const canvas = document.getElementById("sorted");
+            const noData = document.getElementById("no-data");
+
+            if (!data.transactions || data.transactions.length === 0) {
+                canvas.style.display = "none";
+                noData.style.display = "block";
+                return;
+            }
+
+            const dailyMap = new Map();
+            for (const trx of data.transactions) {
+                const date = new Date(trx.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                const amount = parseFloat(trx.amount);
+                const entry = dailyMap.get(date) || { in: 0, out: 0 };
+
+                if (trx.direction === 'in') {
+                    entry.in += amount;
+                } else {
+                    entry.out += amount;
+                }
+
+                dailyMap.set(date, entry);
+            }
+
+            const sortedDates = Array.from(dailyMap.keys())
+                .sort((a, b) => new Date(a) - new Date(b))
+                .slice(-4);
+
+            const moneyIn = sortedDates.map(date => dailyMap.get(date)?.in || 0);
+            const moneyOut = sortedDates.map(date => dailyMap.get(date)?.out || 0);
+
+            const hasData = [...moneyIn, ...moneyOut].some(val => val !== 0);
+
+            if (!hasData) {
+                canvas.style.display = "none";
+                noData.style.display = "block";
+                return;
+            }
+
+            // ✅ Explicitly hide no-data message
+            canvas.style.display = "block";
+            noData.style.display = "none";
+
+            new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: sortedDates,
+                    datasets: [
+                        {
+                            label: 'Money In',
+                            data: moneyIn,
+                            backgroundColor: '#14b8a6'
+                        },
+                        {
+                            label: 'Money Out',
+                            data: moneyOut,
+                            backgroundColor: '#f97316'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Amount' }
+                        },
+                        x: {
+                            title: { display: true, text: 'Date' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            enabled: true
+                        },
+                        title: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            try {
+                const parsedData = typeof window.injectedData === 'string'
+                    ? JSON.parse(window.injectedData)
+                    : injectedData;
+
+                renderMoneyChart(parsedData);
+            } catch (e) {
+                console.error("Failed to parse chart data:", e);
+                document.getElementById("no-data").style.display = "block";
+            }
+        });
+    </script>
+</body>
+
+</html>

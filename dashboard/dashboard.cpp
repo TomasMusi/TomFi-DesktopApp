@@ -6,6 +6,7 @@
 #include "Session/Session.hpp"
 #include "welcome.h"
 #include "Transaction/transaction.h"
+#include "chart/longChart.h"
 
 using namespace std;
 
@@ -147,6 +148,13 @@ Gtk::Widget *create_dashboard(Gtk::Window &window)
     expenses_card->set_shadow_type(Gtk::SHADOW_NONE);
     top_row->pack_start(*expenses_card, Gtk::PACK_EXPAND_WIDGET);
 
+    // Create and insert chart into the card
+    Gtk::Widget *chart_ui = create_chart_webview(window);
+    chart_ui->set_hexpand(true);
+    chart_ui->set_vexpand(true);
+    expenses_card->add(*chart_ui);
+    chart_ui->show_all();
+
     auto transactions_card = Gtk::make_managed<Gtk::Frame>();
     transactions_card->set_name("dashboard-card");
     transactions_card->set_size_request(200, 150);
@@ -264,6 +272,12 @@ Gtk::Widget *create_dashboard(Gtk::Window &window)
     analytics->set_shadow_type(Gtk::SHADOW_NONE);
     analytics->set_size_request(600, 250);
     content_box->pack_start(*analytics, Gtk::PACK_SHRINK);
+
+    Gtk::Widget *longchart_ui = create_longchart_webview(window);
+    longchart_ui->set_hexpand(true);
+    longchart_ui->set_vexpand(true);
+    analytics->add(*longchart_ui);
+    longchart_ui->show_all();
 
     main_box->pack_start(*content_box);
     white_frame->add(*main_box);

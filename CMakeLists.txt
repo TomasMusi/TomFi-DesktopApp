@@ -6,6 +6,9 @@ set(CMAKE_CXX_STANDARD 17)
 # Enable compiler warnings
 add_compile_options(-Wall -Wextra)
 
+# ─── Define SOURCE_DIR macro to access source path from C++ ──────────────
+add_definitions(-DSOURCE_DIR="${CMAKE_SOURCE_DIR}")
+
 # ─── GTKMM ───────────────────────────────────────────
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GTKMM REQUIRED gtkmm-3.0)
@@ -42,6 +45,7 @@ set(SOURCES
     env.cpp
     dashboard/dashboard.cpp
     dashboard/chart/chart.cpp
+    dashboard/chart/longChart.cpp
     login/login_page.cpp
     register/register_page.cpp
     discord-activity/discord_integration.cpp

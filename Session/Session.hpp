@@ -13,7 +13,8 @@ struct Transaction
     string description; // varchar(225)
     string category;    // varchar(50)
     string amount;      // varchar(50)
-    string direction;   // enum('in','out')
+    string timestamp;
+    string direction; // enum('in','out')
 };
 
 struct Session

@@ -6,7 +6,7 @@ A native desktop version of the **TomFi** banking system — rebuilt in **C++** 
 
 ---
 
-![Screenshot from 2025-06-22 16-08-57](https://github.com/user-attachments/assets/0aab84c3-eabf-49f3-bf8a-002743153738)
+![Screenshot from 2025-07-05 13-27-06](https://github.com/user-attachments/assets/c0baa42a-e0b8-4cb9-a9ef-6151c2dd2921)
 
 
 ## 🧩 About the Project

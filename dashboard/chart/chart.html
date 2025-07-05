@@ -10,14 +10,25 @@
             background-color: #f9fafb;
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 30px;
             text-align: center;
         }
 
         #chart-container {
-            width: 400px;
-            margin: 0 auto;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
+
+        #acquisitions {
+            width: 90% !important;
+            height: 90% !important;
+            max-width: 180px;
+            max-height: 140px;
+        }
+
 
         #no-data {
             font-size: 18px;
@@ -28,7 +39,6 @@
 </head>
 
 <body>
-
     <div id="chart-container">
         <canvas id="acquisitions"></canvas>
         <div id="no-data" style="display: none;">Sorry, doesn't have enough data.</div>
@@ -36,38 +46,44 @@
 
     <script>
         function renderChart(data) {
-            let friend = 0;
-            let food = 0;
-            let sports = 0;
-            let other = 0;
+            let friend = 0, food = 0, sports = 0, other = 0;
+
+            if (!data || !Array.isArray(data.transactions)) {
+                console.warn("Invalid data format");
+                document.getElementById("no-data").style.display = "block";
+                return;
+            }
 
             for (const trx of data.transactions) {
-                switch (trx.category) {
-                    case 'Friend': friend++; break;
-                    case 'Food': food++; break;
-                    case 'Sports': sports++; break;
+                if (!trx.category) continue;
+                switch (trx.category.toLowerCase()) {
+                    case 'friend': friend++; break;
+                    case 'food': food++; break;
+                    case 'sports': sports++; break;
                     default: other++; break;
                 }
             }
 
             const total = friend + food + sports + other;
+            const chartCanvas = document.getElementById("acquisitions");
+            const noDataMessage = document.getElementById("no-data");
+
             if (total === 0) {
-                document.getElementById("acquisitions").style.display = "none";
-                document.getElementById("no-data").style.display = "block";
+                chartCanvas.style.display = "none";
+                noDataMessage.style.display = "block";
                 return;
+            } else {
+                chartCanvas.style.display = "block";
+                noDataMessage.style.display = "none";
             }
+
 
             const chartData = {
                 labels: ['Friend', 'Food', 'Sports', 'Other'],
                 datasets: [{
                     label: 'Transaction Distribution',
                     data: [friend, food, sports, other],
-                    backgroundColor: [
-                        '#4F46E5',
-                        '#FBBF24',
-                        '#34D399',
-                        '#A78BFA'
-                    ],
+                    backgroundColor: ['#4F46E5', '#FBBF24', '#34D399', '#A78BFA'],
                     borderColor: '#fff',
                     borderWidth: 1
                 }]
@@ -88,18 +104,21 @@
             });
         }
 
-        // Wait for C++ to inject window.injectedData
-        document.addEventListener("DOMContentLoaded", function () {
-            if (window.injectedData) {
-                renderChart(window.injectedData);
-            } else {
-                // fallback if injection fails
+        document.addEventListener("DOMContentLoaded", () => {
+            try {
+                const parsedData = typeof window.injectedData === 'string'
+                    ? JSON.parse(window.injectedData)
+                    : window.injectedData;
+
+                console.log("Injected data received:", parsedData); // <== Debug log
+                renderChart(parsedData);
+            } catch (e) {
+                console.error("Failed to parse injected data:", e);
                 document.getElementById("acquisitions").style.display = "none";
                 document.getElementById("no-data").style.display = "block";
             }
         });
     </script>
-
 </body>
 
 </html>
