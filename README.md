@@ -79,11 +79,11 @@ This project taught me:
 - [x] **GUI creation** using GTK (login, registration, forms) 
 - [x] **Full database integration** with prepared statements and transactions 
 - [x] **Discord Rich Presence** for real-time session display 
-- [ ] **Full-featured dashboard** (account overview, transaction history) 
+- [X] **Full-featured dashboard** (account overview, transaction history) 
 - [ ] **Transaction functionality** (send/receive, balance updates) 
 - [ ] **2FA (Two-Factor Authentication)** with TOTP setup 
 - [ ] **Mobile/Desktop notification system** for account activity 
-- [ ] **Analytics panel** with spending charts and category breakdowns 
+- [X] **Analytics panel** with spending charts and category breakdowns 
 - [X] **JWT-like token session handling** for secure client access 
 ---
 
@@ -91,51 +91,53 @@ This project taught me:
 
 ```
 ├── bcrypt/
-│ ├── bcrypt.c
-│ ├── bcrypt.h
-│ ├── COPYING
-│ ├── crypt_blowfish/
-│ ├── Makefile
-│ └── README
+│   ├── bcrypt.c
+│   ├── bcrypt.h
+│   ├── COPYING
+│   ├── crypt_blowfish/
+│   ├── Makefile
+│   └── README
 ├── build/
-│ ├── CMakeCache.txt
-│ ├── CMakeFiles/
-│ ├── cmake_install.cmake
-│ ├── gtk_hello
-│ ├── Makefile
-│ ├── README.md
-│ └── style.css
+│   ├── CMakeCache.txt
+│   ├── CMakeFiles/
+│   ├── cmake_install.cmake
+│   ├── gtk_hello
+│   ├── Makefile
+│   ├── README.md
+│   └── style.css
 ├── dashboard/
-│ ├── dashboard.cpp
-│ └── dashboard.h
+│   ├── chart/
+│   ├── dashboard.cpp
+│   ├── dashboard.h
+│   └── Transaction/
 ├── db/
-│ ├── database.cpp
-│ └── database.h
+│   ├── database.cpp
+│   └── database.h
 ├── discord-activity/
-│ ├── discord_integration.cpp
-│ └── discord_integration.h
+│   ├── discord_integration.cpp
+│   └── discord_integration.h
 ├── discord-rpc/
-│ ├── appveyor.yml
-│ ├── build.py
-│ ├── CMakeLists.txt
-│ ├── documentation/
-│ ├── examples/
-│ ├── include/
-│ ├── LICENSE
-│ ├── README.md
-│ └── src/
+│   ├── appveyor.yml
+│   ├── build.py
+│   ├── CMakeLists.txt
+│   ├── documentation/
+│   ├── examples/
+│   ├── include/
+│   ├── LICENSE
+│   ├── README.md
+│   └── src/
 ├── keys/
-│ ├── private.pem
-│ └── public.pem
+│   ├── private.pem
+│   └── public.pem
 ├── login/
-│ ├── login_page.cpp
-│ └── login_page.h
+│   ├── login_page.cpp
+│   └── login_page.h
 ├── register/
-│ ├── register_page.cpp
-│ └── register.h
+│   ├── register_page.cpp
+│   └── register.h
 ├── Session/
-│ ├── Session.cpp
-│ └── Session.hpp
+│   ├── Session.cpp
+│   └── Session.hpp
 ├── CMakeLists.txt
 ├── env.cpp
 ├── env.hpp
