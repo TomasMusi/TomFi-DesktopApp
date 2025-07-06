@@ -26,14 +26,16 @@ Throughout this version, I'm exploring:
 ## ✨ Features
 
 | Feature                     | Description                                                                 |
-|----------------------------|-----------------------------------------------------------------------------|
-| 🖥️ **Modern UI**            | Built with GTKmm 3.0 and styled using external CSS                         |
-| 🔒 **Secure Registration**  | Passwords hashed with bcrypt before storage                                |
-| 👤 **Login System**         | Form validation with string trimming, matching, and length checks          |
-| 📱 **Discord Activity**     | Shows real-time presence while using the app                               |
-| 🔐 **Validation Rules**     | Checks for empty fields, length, matching passwords, and forbidden spaces |
-| 🔧 **Configurable via .env**| Keep secrets out of code using a custom `.env` loader                      |
-| 🧪 **Modular Structure**    | Separated into login, register, welcome, and main logic                    |
+|---------------------------- |-----------------------------------------------------------------------------|
+| 🖥️ **Modern UI**            | Built with GTKmm 3.0 and styled using external CSS                          |
+| 🔒 **Secure Registration**  | Passwords hashed with bcrypt before storage                                 |
+| 👤 **Login System**         | Form validation with string trimming, matching, and length checks           |
+| 📱 **Discord Activity**     | Shows real-time presence while using the app                                |
+| 🔐 **Validation Rules**     | Checks for empty fields, length, matching passwords, and forbidden spaces   |
+| 🔧 **Configurable via .env**| Keep secrets out of code using a custom `.env` loader                       |
+| 🧪 **Modular Structure**    | Separated into login, register, welcome, and main logic                     |
+| 🌐 **Web Chart Integration**| Interactive charts embedded using WebKitWebView for HTML/JS rendering       |
+ 
 
 ---
 
@@ -41,11 +43,13 @@ Throughout this version, I'm exploring:
 
 - **Language**: C++17
 - **GUI**: GTKmm 3.0
+- **Web Embedding**: WebKitGTK via `WebKitWebView`
 - **Styling**: CSS-like `style.css` for GTK
 - **Security**: bcrypt (via `bcrypt` C++ library)
 - **Discord**: Discord Game SDK (Rich Presence)
 - **Build Tool**: CMake
 - **Env Loading**: Custom `.env` parser (header-only)
+
 
 ---
 
