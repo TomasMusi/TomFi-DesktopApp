@@ -7,6 +7,7 @@
 #include "welcome.h"
 #include "Transaction/transaction.h"
 #include "chart/longChart.h"
+#include "wallet/wallet.h"
 
 using namespace std;
 
@@ -113,7 +114,13 @@ Gtk::Widget *create_dashboard(Gtk::Window &window)
     auto wallet_btn = Gtk::make_managed<Gtk::Button>("Wallet");
     wallet_btn->set_name("sidebar-button");
     wallet_btn->set_halign(Gtk::ALIGN_START);
-    // TODO: connect wallet_btn->signal_clicked() to wallet page
+    wallet_btn->signal_clicked().connect([&window]()
+                                         {
+        Gtk::Widget *wallet_ui = create_wallet_ui(window);
+        window.remove();
+        window.add(*wallet_ui);
+        window.set_title("TomFi | Wallet");
+        wallet_ui->show_all(); });
     sidebar->pack_start(*wallet_btn, Gtk::PACK_SHRINK);
 
     // Settings Button

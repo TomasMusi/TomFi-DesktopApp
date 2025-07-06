@@ -46,6 +46,7 @@ set(SOURCES
     dashboard/dashboard.cpp
     dashboard/chart/chart.cpp
     dashboard/chart/longChart.cpp
+    dashboard/wallet/wallet.cpp
     login/login_page.cpp
     register/register_page.cpp
     discord-activity/discord_integration.cpp
