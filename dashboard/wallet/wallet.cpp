@@ -11,6 +11,48 @@
 
 using namespace std;
 
+void show_deposit_dialog(Gtk::Window *parent_window)
+{
+    auto dialog = Gtk::make_managed<Gtk::Dialog>("Add Funds to Your Account", *parent_window, true);
+    dialog->set_default_size(400, 200);
+    dialog->set_border_width(20);
+    dialog->set_modal(true);
+    dialog->set_resizable(false);
+    dialog->get_content_area()->set_spacing(10);
+
+    // Entry field
+    auto label = Gtk::make_managed<Gtk::Label>("Amount (USD)");
+    label->set_halign(Gtk::ALIGN_START);
+
+    auto entry = Gtk::make_managed<Gtk::Entry>();
+    entry->set_placeholder_text("e.g. 100");
+    entry->set_input_purpose(Gtk::INPUT_PURPOSE_NUMBER);
+    entry->set_hexpand(true);
+    entry->set_margin_bottom(10);
+
+    // Buttons
+    dialog->add_button("Cancel", Gtk::RESPONSE_CANCEL);
+    dialog->add_button("Append", Gtk::RESPONSE_OK);
+
+    // Layout
+    auto box = dialog->get_content_area();
+    box->pack_start(*label, Gtk::PACK_SHRINK);
+    box->pack_start(*entry, Gtk::PACK_SHRINK);
+
+    dialog->show_all();
+
+    // Response handling
+    int result = dialog->run();
+    if (result == Gtk::RESPONSE_OK)
+    {
+        std::string amount = entry->get_text();
+        std::cout << "Append funds: " << amount << std::endl;
+        // TODO: Add funds logic here
+    }
+
+    dialog->hide();
+}
+
 Gtk::Widget *create_wallet_ui(Gtk::Window &window)
 {
     if (!current_session.is_authenticated)
@@ -274,6 +316,14 @@ Gtk::Widget *create_wallet_ui(Gtk::Window &window)
         btn->set_margin_end(8);
         btn->set_margin_top(8);
         btn->set_margin_bottom(8);
+
+        if (label == "Deposit")
+        {
+            btn->signal_clicked().connect([&window]
+                                          {
+                                              show_deposit_dialog(&window); // <- Pass the parent window
+                                          });
+        }
 
         grid->attach(*btn, col, 0, 1, 1);
         grid->set_column_homogeneous(true);

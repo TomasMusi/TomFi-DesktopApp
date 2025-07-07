@@ -6,6 +6,7 @@
 #include "transaction.h"
 #include "welcome.h"
 #include "dashboard/dashboard.h"
+#include "dashboard/wallet/wallet.h"
 #include <sstream>
 #include <iomanip>
 using namespace std;
@@ -77,6 +78,7 @@ Gtk::Widget *create_transactions_ui(Gtk::Window &window)
     app_title->set_name("app-title");
     sidebar->pack_start(*app_title, Gtk::PACK_SHRINK);
 
+    // Dashboard Button
     auto dashboard_btn = Gtk::make_managed<Gtk::Button>("Dashboard");
     dashboard_btn->set_name("sidebar-button");
     dashboard_btn->set_halign(Gtk::ALIGN_START);
@@ -89,21 +91,32 @@ Gtk::Widget *create_transactions_ui(Gtk::Window &window)
         dashboard_ui->show_all(); });
     sidebar->pack_start(*dashboard_btn, Gtk::PACK_SHRINK);
 
+    // Transaction Button
     auto transactions_btn = Gtk::make_managed<Gtk::Button>("Transactions");
     transactions_btn->set_name("side-button-current");
     transactions_btn->set_halign(Gtk::ALIGN_START);
     sidebar->pack_start(*transactions_btn, Gtk::PACK_SHRINK);
 
+    // Mail Button
     auto mail_btn = Gtk::make_managed<Gtk::Button>("Mail");
     mail_btn->set_name("sidebar-button");
     mail_btn->set_halign(Gtk::ALIGN_START);
     sidebar->pack_start(*mail_btn, Gtk::PACK_SHRINK);
 
+    // Wallet Button
     auto wallet_btn = Gtk::make_managed<Gtk::Button>("Wallet");
     wallet_btn->set_name("sidebar-button");
     wallet_btn->set_halign(Gtk::ALIGN_START);
+    wallet_btn->signal_clicked().connect([&window]()
+                                         {
+        Gtk::Widget *wallet_ui = create_wallet_ui(window);
+        window.remove();
+        window.add(*wallet_ui);
+        window.set_title("TomFi | Wallet");
+        wallet_ui->show_all(); });
     sidebar->pack_start(*wallet_btn, Gtk::PACK_SHRINK);
 
+    // Settings Button
     auto settings_btn = Gtk::make_managed<Gtk::Button>("Settings");
     settings_btn->set_name("sidebar-button");
     settings_btn->set_halign(Gtk::ALIGN_START);
