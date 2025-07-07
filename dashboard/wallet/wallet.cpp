@@ -117,80 +117,151 @@ Gtk::Widget *create_wallet_ui(Gtk::Window &window)
     content_box->set_margin_start(20);
     content_box->set_margin_end(20);
 
+    // Credit Card
     auto card_frame = Gtk::make_managed<Gtk::Frame>();
     card_frame->set_name("credit-card-frame");
     card_frame->set_shadow_type(Gtk::SHADOW_NONE);
 
+    // Main vertical container
     auto card_box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
-    card_box->set_spacing(5);
+    card_box->set_spacing(10);
+    card_box->set_margin_top(10);
+    card_box->set_margin_bottom(10);
+    card_box->set_margin_start(15);
+    card_box->set_margin_end(15);
 
-    auto balance_row = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
-    balance_row->set_spacing(10);
-
+    // Top row: balance + active badge
+    auto top_row = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
     auto balance = Gtk::make_managed<Gtk::Label>(card_balance);
     balance->set_name("card-balance");
     balance->set_halign(Gtk::ALIGN_START);
     balance->set_hexpand(true);
 
-    auto active_badge = Gtk::make_managed<Gtk::Label>(current_session.is_active ? "✅ Active" : "❌ Deactivated");
+    auto active_badge = Gtk::make_managed<Gtk::Label>(
+        current_session.is_active ? "✅ Active" : "❌ Deactivated");
     active_badge->set_name("active-badge");
-    active_badge->set_margin_top(3);
     active_badge->set_halign(Gtk::ALIGN_END);
+    active_badge->set_margin_top(3);
+
     if (current_session.is_active)
         active_badge->get_style_context()->add_class("active-badge");
     else
         active_badge->get_style_context()->add_class("inactive-badge");
 
-    balance_row->pack_start(*balance, Gtk::PACK_EXPAND_WIDGET);
-    balance_row->pack_start(*active_badge, Gtk::PACK_SHRINK);
-    card_box->pack_start(*balance_row, Gtk::PACK_SHRINK);
+    top_row->pack_start(*balance, Gtk::PACK_EXPAND_WIDGET);
+    top_row->pack_start(*active_badge, Gtk::PACK_SHRINK);
+    card_box->pack_start(*top_row, Gtk::PACK_SHRINK);
 
+    // Center card number
     auto card_number_label = Gtk::make_managed<Gtk::Label>(card_number);
+    card_number_label->set_halign(Gtk::ALIGN_START);
+    card_number_label->set_hexpand(true);
     card_box->pack_start(*card_number_label, Gtk::PACK_SHRINK);
 
-    auto expiry = Gtk::make_managed<Gtk::Label>("EXP: 12/24   CVV: ***");
-    card_box->pack_start(*expiry, Gtk::PACK_SHRINK);
+    // Info row: Cardholder + Expiry/CVV
+    auto info_row = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
+    info_row->set_spacing(10);
+    info_row->set_hexpand(true);
 
-    auto holder = Gtk::make_managed<Gtk::Label>(card_holder_text);
-    card_box->pack_start(*holder, Gtk::PACK_SHRINK);
+    // Cardholder (left column)
+    auto cardholder_box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
 
+    // Title: "Cardholder"
+    auto cardholder_title = Gtk::make_managed<Gtk::Label>("Cardholder");
+    cardholder_title->set_name("card-info-label");
+    cardholder_title->set_halign(Gtk::ALIGN_START);
+
+    // Value: username in bold
+    auto cardholder_name = Gtk::make_managed<Gtk::Label>();
+    cardholder_name->set_markup("<b>" + current_session.name + "</b>");
+    cardholder_name->set_halign(Gtk::ALIGN_START);
+
+    cardholder_box->pack_start(*cardholder_title, Gtk::PACK_SHRINK);
+    cardholder_box->pack_start(*cardholder_name, Gtk::PACK_SHRINK);
+    cardholder_box->set_hexpand(true);
+    cardholder_box->set_halign(Gtk::ALIGN_START);
+
+    // Expiry/CVV (right column)
+    auto exp_cvv_box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
+    auto labels_row = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
+    auto values_row = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
+
+    auto expiry_label = Gtk::make_managed<Gtk::Label>("EXPIRES");
+    auto cvv_label = Gtk::make_managed<Gtk::Label>("CVV");
+    expiry_label->set_halign(Gtk::ALIGN_END);
+    cvv_label->set_halign(Gtk::ALIGN_END);
+    expiry_label->set_margin_end(20);
+
+    labels_row->pack_start(*expiry_label, Gtk::PACK_EXPAND_WIDGET);
+    labels_row->pack_start(*cvv_label, Gtk::PACK_EXPAND_WIDGET);
+
+    auto expiry_value = Gtk::make_managed<Gtk::Label>("12/24");
+    auto cvv_value = Gtk::make_managed<Gtk::Label>("***");
+    expiry_value->set_halign(Gtk::ALIGN_END);
+    cvv_value->set_halign(Gtk::ALIGN_END);
+    expiry_value->set_margin_end(20);
+
+    values_row->pack_start(*expiry_value, Gtk::PACK_EXPAND_WIDGET);
+    values_row->pack_start(*cvv_value, Gtk::PACK_EXPAND_WIDGET);
+
+    exp_cvv_box->pack_start(*labels_row, Gtk::PACK_SHRINK);
+    exp_cvv_box->pack_start(*values_row, Gtk::PACK_SHRINK);
+    exp_cvv_box->set_halign(Gtk::ALIGN_END);
+    exp_cvv_box->set_hexpand(true);
+
+    // Add to info row
+    info_row->pack_start(*cardholder_box, Gtk::PACK_EXPAND_WIDGET);
+    info_row->pack_start(*exp_cvv_box, Gtk::PACK_EXPAND_WIDGET);
+    card_box->pack_start(*info_row, Gtk::PACK_SHRINK);
+
+    // Bottom row: Button aligned right
+    auto btn_row = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
+    btn_row->set_hexpand(true);
     auto add_btn = Gtk::make_managed<Gtk::Button>("+ New transaction");
     add_btn->set_name("add-transaction");
-    card_box->pack_start(*add_btn, Gtk::PACK_SHRINK);
+    add_btn->set_halign(Gtk::ALIGN_END);
+    btn_row->pack_end(*add_btn, Gtk::PACK_SHRINK);
+    card_box->pack_start(*btn_row, Gtk::PACK_SHRINK);
 
+    // Final assembly
     card_frame->add(*card_box);
     content_box->pack_start(*card_frame, Gtk::PACK_SHRINK);
 
-    auto actions_frame = Gtk::make_managed<Gtk::Frame>("Wallet Actions");
-    actions_frame->set_name("dashboard-card");
-    actions_frame->set_shadow_type(Gtk::SHADOW_NONE);
-    actions_frame->set_size_request(600, 250);
+    // Action Wrapper
+    auto actions_wrapper = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
+    actions_wrapper->set_name("wallet-actions-wrapper");
+    actions_wrapper->set_margin_top(20);
+    actions_wrapper->set_margin_bottom(20);
 
+    // Grid
     auto grid = Gtk::make_managed<Gtk::Grid>();
     grid->set_column_spacing(16);
-    grid->set_row_spacing(10);
+    grid->set_row_spacing(16);
+    grid->set_valign(Gtk::ALIGN_CENTER);
+    grid->set_halign(Gtk::ALIGN_CENTER);
 
-    vector<pair<string, string>> actions = {
-        {"Transfer", "system-run"},
-        {"Show PIN", "dialog-password"},
-        {"Deposit", "go-up"},
-        {"Deactivate", "process-stop"},
-        {"Info", "dialog-information"},
-        {"QR Code", "insert-image"}};
+    vector<tuple<string, string, string>> actions = {
+        {"Transfer", "system-run", "action-icon-blue"},
+        {"Show PIN", "dialog-password", "action-icon-indigo"},
+        {"Deposit", "go-up", "action-icon-green"},
+        {"Deactivate", "process-stop", "action-icon-red"},
+        {"Info", "dialog-information", "action-icon-yellow"},
+        {"QR Code", "insert-image", "action-icon-purple"}};
 
     int col = 0;
-    for (const auto &[label, icon] : actions)
+    for (const auto &[label, icon, icon_class] : actions)
     {
         auto action_box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
-        action_box->set_spacing(3);
+        action_box->set_spacing(5);
         action_box->set_halign(Gtk::ALIGN_CENTER);
 
         auto icon_img = Gtk::make_managed<Gtk::Image>();
-        icon_img->set_from_icon_name(icon, Gtk::ICON_SIZE_MENU);
+        icon_img->set_from_icon_name(icon, Gtk::ICON_SIZE_DIALOG);
+        icon_img->get_style_context()->add_class(icon_class);
 
         auto action_label = Gtk::make_managed<Gtk::Label>(label);
+        action_label->set_name("wallet-action-label");
         action_label->set_halign(Gtk::ALIGN_CENTER);
-        action_label->set_margin_top(2);
 
         action_box->pack_start(*icon_img, Gtk::PACK_SHRINK);
         action_box->pack_start(*action_label, Gtk::PACK_SHRINK);
@@ -198,12 +269,19 @@ Gtk::Widget *create_wallet_ui(Gtk::Window &window)
         auto btn = Gtk::make_managed<Gtk::Button>();
         btn->set_name("wallet-action-btn");
         btn->add(*action_box);
-        btn->set_size_request(100, 60);
-        grid->attach(*btn, col++, 0, 1, 1);
+        btn->set_size_request(110, 80);
+        btn->set_margin_start(8);
+        btn->set_margin_end(8);
+        btn->set_margin_top(8);
+        btn->set_margin_bottom(8);
+
+        grid->attach(*btn, col, 0, 1, 1);
+        grid->set_column_homogeneous(true);
+        col++;
     }
 
-    actions_frame->add(*grid);
-    content_box->pack_start(*actions_frame, Gtk::PACK_SHRINK);
+    actions_wrapper->pack_start(*grid, Gtk::PACK_SHRINK);
+    content_box->pack_start(*actions_wrapper, Gtk::PACK_SHRINK);
 
     main_box->pack_start(*content_box);
     white_frame->add(*main_box);
