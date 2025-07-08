@@ -335,11 +335,13 @@ bool verify_login(const string &email, const string &password)
         current_session.card_number = card_number;
         current_session.balance = balance;
         current_session.is_active = is_active;
+        current_session.user_id = id;
 
         cout << "💳 Card Info Loaded:\n";
         cout << "Card Number: " << card_number << endl;
         cout << "Balance: " << balance << endl;
         cout << "Active: " << is_active << endl;
+        cout << "User id:" << id << endl;
     }
     else
     {
@@ -682,3 +684,248 @@ bool register_data(const string &name, const string &email, const string &passwo
     mysql_close(conn);
     return true;
 }
+
+// Credit card events.
+
+// Change status of the card.
+
+bool card_status_toggle(int user_id)
+{
+    MYSQL *conn;
+    MYSQL_STMT *stmt;
+
+    // load env data.
+    string DATABASE_IP = env_vars["DATABASE_IP"];
+    string DATABASE_USER = env_vars["DATABASE_USER"];
+    string DATABASE_PASSWORD = env_vars["DATABASE_PASSWORD"];
+    string DATABASE_NAME = env_vars["DATABASE_NAME"];
+    string DATABASE_PORT = env_vars["DATABASE_PORT"];
+
+    conn = mysql_init(NULL);
+    if (!conn)
+    {
+        cerr << "❌ mysql_init() failed" << endl;
+        return false;
+    }
+
+    if (!mysql_real_connect(conn, DATABASE_IP.c_str(), DATABASE_USER.c_str(),
+                            DATABASE_PASSWORD.c_str(), DATABASE_NAME.c_str(),
+                            stoi(DATABASE_PORT), NULL, 0))
+    {
+        cerr << "❌ Connection failed: " << mysql_error(conn) << endl;
+        mysql_close(conn);
+        return false;
+    }
+
+    // 1 → 0 or 0 → 1 (Chaging the values.)
+    int new_status = current_session.is_active ? 0 : 1;
+
+    const char *sql = R"(
+        UPDATE Credit_card
+        SET is_active = ?
+        WHERE user_id = ?
+    )";
+
+    stmt = mysql_stmt_init(conn);
+    if (!stmt || mysql_stmt_prepare(stmt, sql, strlen(sql)))
+    {
+        cerr << "❌ Prepare failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_close(conn);
+        return false;
+    }
+
+    MYSQL_BIND bind[2];
+    memset(bind, 0, sizeof(bind));
+
+    bind[0].buffer_type = MYSQL_TYPE_LONG;
+    bind[0].buffer = &new_status;
+
+    bind[1].buffer_type = MYSQL_TYPE_LONG;
+    bind[1].buffer = &user_id;
+
+    if (mysql_stmt_bind_param(stmt, bind))
+    {
+        cerr << "❌ Bind failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        mysql_close(conn);
+        return false;
+    }
+
+    if (mysql_stmt_execute(stmt))
+    {
+        cerr << "❌ Execute failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        mysql_close(conn);
+        return false;
+    }
+
+    // ✅ Update session state after DB success
+    current_session.is_active = new_status;
+
+    mysql_commit(conn);
+    mysql_stmt_close(stmt);
+    mysql_close(conn);
+    return true;
+}
+
+// Depositing money.
+
+bool add_funds_balance(int user_id, int amount)
+{
+    MYSQL *conn;
+    MYSQL_STMT *stmt;
+
+    string DATABASE_IP = env_vars["DATABASE_IP"];
+    string DATABASE_USER = env_vars["DATABASE_USER"];
+    string DATABASE_PASSWORD = env_vars["DATABASE_PASSWORD"];
+    string DATABASE_NAME = env_vars["DATABASE_NAME"];
+    string DATABASE_PORT = env_vars["DATABASE_PORT"];
+
+    conn = mysql_init(NULL);
+    if (!conn)
+    {
+        cerr << "❌ mysql_init() failed" << endl;
+        return false;
+    }
+
+    if (!mysql_real_connect(conn, DATABASE_IP.c_str(), DATABASE_USER.c_str(),
+                            DATABASE_PASSWORD.c_str(), DATABASE_NAME.c_str(),
+                            stoi(DATABASE_PORT), NULL, 0))
+    {
+        cerr << "❌ Connection failed: " << mysql_error(conn) << endl;
+        mysql_close(conn);
+        return false;
+    }
+
+    // Step 1: Fetch current balance and card_number
+    const char *select_sql = "SELECT balance, card_number FROM Credit_card WHERE user_id = ?";
+    stmt = mysql_stmt_init(conn);
+    if (!stmt || mysql_stmt_prepare(stmt, select_sql, strlen(select_sql)))
+    {
+        cerr << "❌ Prepare (select) failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_close(conn);
+        return false;
+    }
+
+    MYSQL_BIND param[1], result[2];
+    memset(param, 0, sizeof(param));
+    memset(result, 0, sizeof(result));
+
+    param[0].buffer_type = MYSQL_TYPE_LONG;
+    param[0].buffer = &user_id;
+
+    char balance_buffer[64];
+    char card_number[64];
+
+    result[0].buffer_type = MYSQL_TYPE_STRING;
+    result[0].buffer = balance_buffer;
+    result[0].buffer_length = sizeof(balance_buffer);
+
+    result[1].buffer_type = MYSQL_TYPE_STRING;
+    result[1].buffer = card_number;
+    result[1].buffer_length = sizeof(card_number);
+
+    if (mysql_stmt_bind_param(stmt, param) ||
+        mysql_stmt_bind_result(stmt, result) ||
+        mysql_stmt_execute(stmt) ||
+        mysql_stmt_fetch(stmt))
+    {
+        cerr << "❌ Fetch balance/card_number failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        mysql_close(conn);
+        return false;
+    }
+
+    mysql_stmt_close(stmt);
+
+    int current_balance = atoi(balance_buffer);
+    int new_balance = current_balance + amount;
+
+    // Step 2: Update balance
+    const char *update_sql = "UPDATE Credit_card SET balance = ? WHERE user_id = ?";
+    stmt = mysql_stmt_init(conn);
+    if (!stmt || mysql_stmt_prepare(stmt, update_sql, strlen(update_sql)))
+    {
+        cerr << "❌ Prepare (update) failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_close(conn);
+        return false;
+    }
+
+    MYSQL_BIND update_bind[2];
+    memset(update_bind, 0, sizeof(update_bind));
+
+    update_bind[0].buffer_type = MYSQL_TYPE_LONG;
+    update_bind[0].buffer = &new_balance;
+
+    update_bind[1].buffer_type = MYSQL_TYPE_LONG;
+    update_bind[1].buffer = &user_id;
+
+    if (mysql_stmt_bind_param(stmt, update_bind) ||
+        mysql_stmt_execute(stmt))
+    {
+        cerr << "❌ Update balance failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        mysql_close(conn);
+        return false;
+    }
+
+    mysql_stmt_close(stmt);
+
+    // Step 3: Insert into Transactions table
+    const char *insert_tx_sql = R"(
+        INSERT INTO Transactions (
+            sender_account_id,
+            receiver_account,
+            receiver_user_id,
+            description,
+            reciever_name,
+            category,
+            amount,
+            direction,
+            timestamp
+        ) VALUES (?, ?, NULL, 'deposit', 'deposit', 'other', ?, 'in', CURRENT_TIMESTAMP)
+    )";
+
+    stmt = mysql_stmt_init(conn);
+    if (!stmt || mysql_stmt_prepare(stmt, insert_tx_sql, strlen(insert_tx_sql)))
+    {
+        cerr << "❌ Prepare (insert tx) failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_close(conn);
+        return false;
+    }
+
+    string card_number_str(card_number);
+    string amount_str = to_string(amount);
+
+    MYSQL_BIND tx_bind[3];
+    memset(tx_bind, 0, sizeof(tx_bind));
+
+    tx_bind[0].buffer_type = MYSQL_TYPE_LONG;
+    tx_bind[0].buffer = &user_id;
+
+    tx_bind[1].buffer_type = MYSQL_TYPE_STRING;
+    tx_bind[1].buffer = (void *)card_number_str.c_str();
+    tx_bind[1].buffer_length = card_number_str.length();
+
+    tx_bind[2].buffer_type = MYSQL_TYPE_STRING;
+    tx_bind[2].buffer = (void *)amount_str.c_str();
+    tx_bind[2].buffer_length = amount_str.length();
+
+    if (mysql_stmt_bind_param(stmt, tx_bind) || mysql_stmt_execute(stmt))
+    {
+        cerr << "❌ Insert transaction failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        mysql_close(conn);
+        return false;
+    }
+
+    mysql_commit(conn);
+    mysql_stmt_close(stmt);
+    mysql_close(conn);
+
+    // Update session
+    current_session.balance = to_string(new_balance);
+    return true;
+}
+
+// See Credit Card Pin.

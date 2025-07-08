@@ -39,10 +39,4 @@ void load_env(const string &path)
         string value = trim(line.substr(pos + 1));
         env_vars[key] = value;
     }
-
-    // Optional debug print
-    for (const auto &[k, v] : env_vars)
-    {
-        cout << "[env] " << k << " = " << v << endl;
-    }
 }

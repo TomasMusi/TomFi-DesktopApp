@@ -8,17 +8,18 @@
 #include "dashboard/Transaction/transaction.h"
 #include "dashboard/chart/longChart.h"
 #include "wallet.h"
+#include "db/database.h"
 
 using namespace std;
 
 void show_deposit_dialog(Gtk::Window *parent_window)
 {
-    auto dialog = Gtk::make_managed<Gtk::Dialog>("Add Funds to Your Account", *parent_window, true);
-    dialog->set_default_size(400, 200);
-    dialog->set_border_width(20);
-    dialog->set_modal(true);
-    dialog->set_resizable(false);
-    dialog->get_content_area()->set_spacing(10);
+    Gtk::Dialog dialog("Add Funds to Your Account", *parent_window, true);
+    dialog.set_default_size(400, 200);
+    dialog.set_border_width(20);
+    dialog.set_modal(true);
+    dialog.set_resizable(false);
+    dialog.get_content_area()->set_spacing(10);
 
     // Entry field
     auto label = Gtk::make_managed<Gtk::Label>("Amount (USD)");
@@ -31,26 +32,64 @@ void show_deposit_dialog(Gtk::Window *parent_window)
     entry->set_margin_bottom(10);
 
     // Buttons
-    dialog->add_button("Cancel", Gtk::RESPONSE_CANCEL);
-    dialog->add_button("Append", Gtk::RESPONSE_OK);
+    dialog.add_button("Cancel", Gtk::RESPONSE_CANCEL);
+    dialog.add_button("Append", Gtk::RESPONSE_OK);
 
     // Layout
-    auto box = dialog->get_content_area();
+    auto box = dialog.get_content_area();
     box->pack_start(*label, Gtk::PACK_SHRINK);
     box->pack_start(*entry, Gtk::PACK_SHRINK);
 
-    dialog->show_all();
+    dialog.show_all();
 
     // Response handling
-    int result = dialog->run();
+    int result = dialog.run();
     if (result == Gtk::RESPONSE_OK)
     {
-        std::string amount = entry->get_text();
-        std::cout << "Append funds: " << amount << std::endl;
-        // TODO: Add funds logic here
+        string amount_str = entry->get_text();
+        try
+        {
+            int amount = std::stoi(amount_str);
+            if (amount >= 1)
+            {
+                cout << "Append funds: " << amount << std::endl;
+                add_funds_balance(current_session.user_id, amount);
+                Gtk::Widget *new_ui = create_wallet_ui(*parent_window);
+                parent_window->remove();
+                parent_window->add(*new_ui);
+                parent_window->set_title("TomFi | Wallet");
+                new_ui->show_all();
+            }
+            else
+            {
+                Gtk::MessageDialog error_dialog(*parent_window, "Please enter a number greater than or equal to 1.", false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_OK, true);
+                error_dialog.run();
+            }
+        }
+        catch (const exception &e)
+        {
+            Gtk::MessageDialog error_dialog(*parent_window, "Invalid input. Please enter a valid integer.", false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_OK, true);
+            error_dialog.run();
+        }
     }
+}
 
-    dialog->hide();
+void card_status(Gtk::Window &window, int user_id)
+{
+    if (card_status_toggle(user_id))
+    {
+        show_toast_success(window, current_session.is_active ? "✅ Card activated" : "❌ Card deactivated");
+        //  Refresh Wallet UI after change:
+        Gtk::Widget *new_ui = create_wallet_ui(window);
+        window.remove();
+        window.add(*new_ui);
+        window.set_title("TomFi | Wallet");
+        new_ui->show_all();
+    }
+    else
+    {
+        show_toast_fail(window, "Failed to update card status.");
+    }
 }
 
 Gtk::Widget *create_wallet_ui(Gtk::Window &window)
@@ -286,7 +325,9 @@ Gtk::Widget *create_wallet_ui(Gtk::Window &window)
         {"Transfer", "system-run", "action-icon-blue"},
         {"Show PIN", "dialog-password", "action-icon-indigo"},
         {"Deposit", "go-up", "action-icon-green"},
-        {"Deactivate", "process-stop", "action-icon-red"},
+        {current_session.is_active ? "Deactivate" : "Activate",
+         current_session.is_active ? "media-playback-stop" : "media-playback-start",
+         "action-icon-red"},
         {"Info", "dialog-information", "action-icon-yellow"},
         {"QR Code", "insert-image", "action-icon-purple"}};
 
@@ -323,6 +364,12 @@ Gtk::Widget *create_wallet_ui(Gtk::Window &window)
                                           {
                                               show_deposit_dialog(&window); // <- Pass the parent window
                                           });
+        }
+
+        if (label == "Deactivate" || label == "Activate")
+        {
+            btn->signal_clicked().connect([&window]
+                                          { card_status(window, current_session.user_id); });
         }
 
         grid->attach(*btn, col, 0, 1, 1);

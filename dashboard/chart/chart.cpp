@@ -32,7 +32,6 @@ Gtk::Widget *create_chart_webview(Gtk::Window &window)
 
     Json::StreamWriterBuilder writer;
     string json = Json::writeString(writer, root);
-    cout << "Injected JSON: " << json << endl;
 
     // Load HTML
     webkit_web_view_load_uri(webview, file_uri.c_str());

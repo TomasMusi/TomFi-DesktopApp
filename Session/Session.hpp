@@ -21,7 +21,7 @@ struct Session
 {
     // User
     bool is_authenticated = false;
-    int user_id = -1;
+    int user_id;
     string name;
     string email;
     string role;
