@@ -12,6 +12,54 @@
 
 using namespace std;
 
+void show_pin_dialog(Gtk::Window *parent_window)
+{
+    Gtk::Dialog dialog("Enter Your Password to View PIN", *parent_window, true);
+    dialog.set_default_size(400, 150);
+    dialog.set_border_width(20);
+    dialog.set_modal(true);
+    dialog.set_resizable(false);
+    dialog.get_content_area()->set_spacing(10);
+
+    auto label = Gtk::make_managed<Gtk::Label>("Please enter your account password:");
+    label->set_halign(Gtk::ALIGN_START);
+
+    auto entry = Gtk::make_managed<Gtk::Entry>();
+    entry->set_visibility(false); // hide the password characters
+    entry->set_placeholder_text("Your password");
+    entry->set_hexpand(true);
+    entry->set_margin_bottom(10);
+
+    dialog.add_button("Cancel", Gtk::RESPONSE_CANCEL);
+    dialog.add_button("View PIN", Gtk::RESPONSE_OK);
+
+    auto box = dialog.get_content_area();
+    box->pack_start(*label, Gtk::PACK_SHRINK);
+    box->pack_start(*entry, Gtk::PACK_SHRINK);
+
+    dialog.show_all();
+
+    int result = dialog.run();
+    if (result == Gtk::RESPONSE_OK)
+    {
+        string user_password = entry->get_text();
+
+        string decrypted_pin = get_decrypted_pin(user_password, current_session.user_id);
+
+        if (!decrypted_pin.empty())
+        {
+            Gtk::MessageDialog pin_dialog(*parent_window, "Your PIN is:", false, Gtk::MESSAGE_INFO, Gtk::BUTTONS_OK, true);
+            pin_dialog.set_secondary_text(decrypted_pin);
+            pin_dialog.run();
+        }
+        else
+        {
+            Gtk::MessageDialog error_dialog(*parent_window, "Password incorrect or failed to decrypt PIN.", false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_OK, true);
+            error_dialog.run();
+        }
+    }
+}
+
 void show_deposit_dialog(Gtk::Window *parent_window)
 {
     Gtk::Dialog dialog("Add Funds to Your Account", *parent_window, true);
@@ -370,6 +418,12 @@ Gtk::Widget *create_wallet_ui(Gtk::Window &window)
         {
             btn->signal_clicked().connect([&window]
                                           { card_status(window, current_session.user_id); });
+        }
+
+        if (label == "Show PIN")
+        {
+            btn->signal_clicked().connect([&window]
+                                          { show_pin_dialog(&window); });
         }
 
         grid->attach(*btn, col, 0, 1, 1);

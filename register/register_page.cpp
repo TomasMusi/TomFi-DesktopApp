@@ -116,18 +116,12 @@ Gtk::Widget *create_register_page(Gtk::Window &window)
     register_button->set_size_request(300, 40);
     register_button->signal_clicked().connect([&window, name_entry, email_entry, pass1_entry, pass2_entry]()
                                               {
-                                                  cout << "Name: " << name_entry->get_text() << endl;
-                                                  cout << "Email: " << email_entry->get_text() << endl;
-                                                  cout << "Password: " << pass1_entry->get_text() << endl;
-                                                  cout << "Confirm: " << pass2_entry->get_text() << endl;
-
                                                   string name = name_entry->get_text();
                                                   string email = email_entry->get_text();
                                                   string passw1 = pass1_entry->get_text();
                                                   string passw2 = pass2_entry->get_text();
                                                 
                                                   RegisterResult result = GetRegister(name, email, passw1, passw2);
-                                                  cout << result.message << endl;
 
                                                   if (result.success)
                                                   {

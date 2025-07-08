@@ -50,17 +50,62 @@ int generate_four_digit_number()
     return 1000 + rand() % 9000;
 }
 
-/*
+// Base64 decode
+vector<unsigned char> base64_decode(const string &encoded)
+{
+    BIO *bio, *b64;
+    int decodeLen = encoded.length();
+    vector<unsigned char> buffer(decodeLen);
 
-    string card_number = generateFormattedNumber();
-    cout << "Generated card number: " << card_number << endl;
+    bio = BIO_new_mem_buf(encoded.data(), encoded.length());
+    b64 = BIO_new(BIO_f_base64());
+    bio = BIO_push(b64, bio);
+    BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
 
-    int number = generate_four_digit_number();
-    cout << "Random 4-digit number: " << number << endl;
+    int length = BIO_read(bio, buffer.data(), encoded.length());
+    buffer.resize(length);
 
-*/
+    BIO_free_all(bio);
+    return buffer;
+}
 
-// Base64 Encode.
+// Decrypt PIN using private key
+string decrypt_pin(const string &encrypted_pin_base64, const string &privkey_path)
+{
+    vector<unsigned char> encrypted_data = base64_decode(encrypted_pin_base64);
+
+    FILE *privkey_file = fopen(privkey_path.c_str(), "r");
+    if (!privkey_file)
+    {
+        cerr << "Failed to open private key file" << endl;
+        return "";
+    }
+
+    RSA *rsa = PEM_read_RSAPrivateKey(privkey_file, nullptr, nullptr, nullptr);
+    fclose(privkey_file);
+    if (!rsa)
+    {
+        cerr << "Failed to load private key" << endl;
+        return "";
+    }
+
+    vector<unsigned char> decrypted(RSA_size(rsa));
+    int result = RSA_private_decrypt(
+        encrypted_data.size(),
+        encrypted_data.data(),
+        decrypted.data(),
+        rsa,
+        RSA_PKCS1_OAEP_PADDING);
+    RSA_free(rsa);
+
+    if (result == -1)
+    {
+        cerr << " PIN decryption failed" << endl;
+        return "";
+    }
+
+    return string(reinterpret_cast<char *>(decrypted.data()), result);
+}
 
 string base64_encode(const unsigned char *input, int length)
 {
@@ -77,7 +122,7 @@ string base64_encode(const unsigned char *input, int length)
     BIO_flush(b64);
     BIO_get_mem_ptr(b64, &buffer_ptr);
 
-    std::string result(buffer_ptr->data, buffer_ptr->length);
+    string result(buffer_ptr->data, buffer_ptr->length);
     BIO_free_all(b64);
     return result;
 }
@@ -88,7 +133,7 @@ string encrypt_pin(const string &pin, const string &pubkey_path)
     FILE *pubkey_file = fopen(pubkey_path.c_str(), "r");
     if (!pubkey_file)
     {
-        cerr << "❌ Failed to open public key" << endl;
+        cerr << "Failed to open public key" << endl;
         return "";
     }
 
@@ -96,7 +141,7 @@ string encrypt_pin(const string &pin, const string &pubkey_path)
     fclose(pubkey_file);
     if (!rsa)
     {
-        cerr << "❌ Failed to read public key" << endl;
+        cerr << "Failed to read public key" << endl;
         return "";
     }
 
@@ -110,7 +155,7 @@ string encrypt_pin(const string &pin, const string &pubkey_path)
 
     if (result == -1)
     {
-        cerr << "❌ Encryption failed\n";
+        cerr << "Encryption failed" << endl;
         return "";
     }
 
@@ -140,7 +185,7 @@ bool verify_login(const string &email, const string &password)
     conn = mysql_init(NULL);
     if (!conn)
     {
-        cerr << "❌ mysql_init() failed\n";
+        cerr << "mysql_init() failed" << endl;
         return false;
     }
 
@@ -152,7 +197,7 @@ bool verify_login(const string &email, const string &password)
                             stoi(DATABASE_PORT),
                             NULL, 0))
     {
-        cerr << "❌ Connection failed: " << mysql_error(conn) << endl;
+        cerr << "Connection failed: " << mysql_error(conn) << endl;
         mysql_close(conn);
         return false;
     }
@@ -162,14 +207,14 @@ bool verify_login(const string &email, const string &password)
     stmt = mysql_stmt_init(conn);
     if (!stmt)
     {
-        cerr << "❌ mysql_stmt_init() failed" << endl;
+        cerr << "mysql_stmt_init() failed" << endl;
         mysql_close(conn);
         return false;
     }
 
     if (mysql_stmt_prepare(stmt, sql, strlen(sql)))
     {
-        cerr << "❌ Prepare failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << "Prepare failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
         return false;
@@ -185,7 +230,7 @@ bool verify_login(const string &email, const string &password)
 
     if (mysql_stmt_bind_param(stmt, param_bind))
     {
-        cerr << "❌ Bind failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Bind failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
         return false;
@@ -194,7 +239,7 @@ bool verify_login(const string &email, const string &password)
     // 5. Execute the query. This actually sends the question to the database and waits for a reply.
     if (mysql_stmt_execute(stmt))
     {
-        cerr << "❌ Execute failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Execute failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
         return false;
@@ -204,7 +249,7 @@ bool verify_login(const string &email, const string &password)
     prepare_meta_result = mysql_stmt_result_metadata(stmt);
     if (!prepare_meta_result)
     {
-        cerr << "❌ Failed to get result metadata" << endl;
+        cerr << " Failed to get result metadata" << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
         return false;
@@ -249,7 +294,7 @@ bool verify_login(const string &email, const string &password)
 
     if (mysql_stmt_bind_result(stmt, result_bind))
     {
-        cerr << "❌ Bind result failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Bind result failed: " << mysql_stmt_error(stmt) << endl;
         mysql_free_result(prepare_meta_result);
         mysql_stmt_close(stmt);
         mysql_close(conn);
@@ -272,7 +317,7 @@ bool verify_login(const string &email, const string &password)
 
     if (bcrypt_checkpw(plain, hashed) != 0)
     {
-        cerr << "❌ Incorrect password!" << endl;
+        cerr << " Incorrect password!" << endl;
         mysql_free_result(prepare_meta_result);
         mysql_stmt_close(stmt);
         mysql_close(conn);
@@ -294,7 +339,7 @@ bool verify_login(const string &email, const string &password)
     stmt = mysql_stmt_init(conn);
     if (!stmt || mysql_stmt_prepare(stmt, card_sql, strlen(card_sql)))
     {
-        cerr << "❌ Prepare card failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Prepare card failed: " << mysql_stmt_error(stmt) << endl;
         mysql_close(conn);
         return false;
     }
@@ -324,7 +369,7 @@ bool verify_login(const string &email, const string &password)
         mysql_stmt_bind_result(stmt, card_result) ||
         mysql_stmt_execute(stmt))
     {
-        cerr << "❌ Card info query failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Card info query failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
         return false;
@@ -337,7 +382,7 @@ bool verify_login(const string &email, const string &password)
         current_session.is_active = is_active;
         current_session.user_id = id;
 
-        cout << "💳 Card Info Loaded:\n";
+        cout << "💳 Card Info Loaded:" << endl;
         cout << "Card Number: " << card_number << endl;
         cout << "Balance: " << balance << endl;
         cout << "Active: " << is_active << endl;
@@ -345,7 +390,7 @@ bool verify_login(const string &email, const string &password)
     }
     else
     {
-        cerr << "⚠️ No card found for user_id: " << id << endl;
+        cerr << "No card found for user_id: " << id << endl;
     }
 
     // Clean up
@@ -362,7 +407,7 @@ bool verify_login(const string &email, const string &password)
     stmt = mysql_stmt_init(conn);
     if (!stmt || mysql_stmt_prepare(stmt, tx_sql, strlen(tx_sql)))
     {
-        cerr << "❌ Prepare transaction query failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Prepare transaction query failed: " << mysql_stmt_error(stmt) << endl;
         mysql_close(conn);
         return true;
     }
@@ -406,7 +451,7 @@ bool verify_login(const string &email, const string &password)
         mysql_stmt_bind_result(stmt, tx_result) ||
         mysql_stmt_execute(stmt))
     {
-        cerr << "❌ Transaction fetch failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Transaction fetch failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
         return true;
@@ -457,7 +502,7 @@ bool register_data(const string &name, const string &email, const string &passwo
     conn = mysql_init(NULL);
     if (!conn)
     {
-        cerr << "❌ mysql_init() failed" << endl;
+        cerr << " mysql_init() failed" << endl;
         return false;
     }
 
@@ -471,7 +516,7 @@ bool register_data(const string &name, const string &email, const string &passwo
                             stoi(DATABASE_PORT),
                             NULL, 0))
     {
-        cerr << "❌ Connection failed: " << mysql_error(conn) << endl;
+        cerr << " Connection failed: " << mysql_error(conn) << endl;
         mysql_close(conn);
         return false;
     }
@@ -486,14 +531,14 @@ bool register_data(const string &name, const string &email, const string &passwo
     stmt = mysql_stmt_init(conn);
     if (!stmt)
     {
-        cerr << "❌ mysql_stmt_init() failed for check\n";
+        cerr << " mysql_stmt_init() failed for check\n";
         mysql_close(conn);
         return false;
     }
 
     if (mysql_stmt_prepare(stmt, check_sql, strlen(check_sql)))
     {
-        cerr << "❌ Prepare (check email) failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Prepare (check email) failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
         return false;
@@ -508,7 +553,7 @@ bool register_data(const string &name, const string &email, const string &passwo
 
     if (mysql_stmt_bind_param(stmt, check_bind))
     {
-        cerr << "❌ Bind (check email) failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Bind (check email) failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
         return false;
@@ -516,7 +561,7 @@ bool register_data(const string &name, const string &email, const string &passwo
 
     if (mysql_stmt_execute(stmt))
     {
-        cerr << "❌ Execute (check email) failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Execute (check email) failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
         return false;
@@ -524,7 +569,7 @@ bool register_data(const string &name, const string &email, const string &passwo
 
     if (mysql_stmt_store_result(stmt))
     {
-        cerr << "❌ Store result (check email) failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Store result (check email) failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
         return false;
@@ -532,7 +577,7 @@ bool register_data(const string &name, const string &email, const string &passwo
 
     if (mysql_stmt_num_rows(stmt) > 0)
     {
-        cerr << "⚠️ Email already exists: " << email << endl;
+        cerr << "Email already exists: " << email << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
         return false;
@@ -550,14 +595,14 @@ bool register_data(const string &name, const string &email, const string &passwo
     stmt = mysql_stmt_init(conn);
     if (!stmt)
     {
-        cerr << "❌ mysql_stmt_init() failed" << endl;
+        cerr << " mysql_stmt_init() failed" << endl;
         mysql_close(conn);
         return false;
     }
 
     if (mysql_stmt_prepare(stmt, sql, strlen(sql)))
     {
-        cerr << "❌ Prepare failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Prepare failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
         return false;
@@ -602,7 +647,7 @@ bool register_data(const string &name, const string &email, const string &passwo
     // Execute INSERT INTO Users
     if (mysql_stmt_bind_param(stmt, bind))
     {
-        cerr << "❌ Bind failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Bind failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
         return false;
@@ -610,7 +655,7 @@ bool register_data(const string &name, const string &email, const string &passwo
 
     if (mysql_stmt_execute(stmt))
     {
-        cerr << "❌ Execute (user insert) failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Execute (user insert) failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
         return false;
@@ -634,7 +679,7 @@ bool register_data(const string &name, const string &email, const string &passwo
     stmt = mysql_stmt_init(conn);
     if (!stmt || mysql_stmt_prepare(stmt, card_sql, strlen(card_sql)))
     {
-        cerr << "❌ Prepare card failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Prepare card failed: " << mysql_stmt_error(stmt) << endl;
         mysql_rollback(conn);
         mysql_close(conn);
         return false;
@@ -663,7 +708,7 @@ bool register_data(const string &name, const string &email, const string &passwo
 
     if (mysql_stmt_bind_param(stmt, card_bind))
     {
-        cerr << "❌ Bind failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Bind failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
         return false;
@@ -671,7 +716,7 @@ bool register_data(const string &name, const string &email, const string &passwo
 
     if (mysql_stmt_execute(stmt))
     {
-        cerr << "❌ Execute failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Execute failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
         return false;
@@ -704,7 +749,7 @@ bool card_status_toggle(int user_id)
     conn = mysql_init(NULL);
     if (!conn)
     {
-        cerr << "❌ mysql_init() failed" << endl;
+        cerr << " mysql_init() failed" << endl;
         return false;
     }
 
@@ -712,7 +757,7 @@ bool card_status_toggle(int user_id)
                             DATABASE_PASSWORD.c_str(), DATABASE_NAME.c_str(),
                             stoi(DATABASE_PORT), NULL, 0))
     {
-        cerr << "❌ Connection failed: " << mysql_error(conn) << endl;
+        cerr << " Connection failed: " << mysql_error(conn) << endl;
         mysql_close(conn);
         return false;
     }
@@ -729,7 +774,7 @@ bool card_status_toggle(int user_id)
     stmt = mysql_stmt_init(conn);
     if (!stmt || mysql_stmt_prepare(stmt, sql, strlen(sql)))
     {
-        cerr << "❌ Prepare failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Prepare failed: " << mysql_stmt_error(stmt) << endl;
         mysql_close(conn);
         return false;
     }
@@ -745,7 +790,7 @@ bool card_status_toggle(int user_id)
 
     if (mysql_stmt_bind_param(stmt, bind))
     {
-        cerr << "❌ Bind failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Bind failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
         return false;
@@ -753,7 +798,7 @@ bool card_status_toggle(int user_id)
 
     if (mysql_stmt_execute(stmt))
     {
-        cerr << "❌ Execute failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Execute failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
         return false;
@@ -784,7 +829,7 @@ bool add_funds_balance(int user_id, int amount)
     conn = mysql_init(NULL);
     if (!conn)
     {
-        cerr << "❌ mysql_init() failed" << endl;
+        cerr << " mysql_init() failed" << endl;
         return false;
     }
 
@@ -792,7 +837,7 @@ bool add_funds_balance(int user_id, int amount)
                             DATABASE_PASSWORD.c_str(), DATABASE_NAME.c_str(),
                             stoi(DATABASE_PORT), NULL, 0))
     {
-        cerr << "❌ Connection failed: " << mysql_error(conn) << endl;
+        cerr << " Connection failed: " << mysql_error(conn) << endl;
         mysql_close(conn);
         return false;
     }
@@ -802,7 +847,7 @@ bool add_funds_balance(int user_id, int amount)
     stmt = mysql_stmt_init(conn);
     if (!stmt || mysql_stmt_prepare(stmt, select_sql, strlen(select_sql)))
     {
-        cerr << "❌ Prepare (select) failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Prepare (select) failed: " << mysql_stmt_error(stmt) << endl;
         mysql_close(conn);
         return false;
     }
@@ -830,7 +875,7 @@ bool add_funds_balance(int user_id, int amount)
         mysql_stmt_execute(stmt) ||
         mysql_stmt_fetch(stmt))
     {
-        cerr << "❌ Fetch balance/card_number failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Fetch balance/card_number failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
         return false;
@@ -846,7 +891,7 @@ bool add_funds_balance(int user_id, int amount)
     stmt = mysql_stmt_init(conn);
     if (!stmt || mysql_stmt_prepare(stmt, update_sql, strlen(update_sql)))
     {
-        cerr << "❌ Prepare (update) failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Prepare (update) failed: " << mysql_stmt_error(stmt) << endl;
         mysql_close(conn);
         return false;
     }
@@ -863,7 +908,7 @@ bool add_funds_balance(int user_id, int amount)
     if (mysql_stmt_bind_param(stmt, update_bind) ||
         mysql_stmt_execute(stmt))
     {
-        cerr << "❌ Update balance failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Update balance failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
         return false;
@@ -889,7 +934,7 @@ bool add_funds_balance(int user_id, int amount)
     stmt = mysql_stmt_init(conn);
     if (!stmt || mysql_stmt_prepare(stmt, insert_tx_sql, strlen(insert_tx_sql)))
     {
-        cerr << "❌ Prepare (insert tx) failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Prepare (insert tx) failed: " << mysql_stmt_error(stmt) << endl;
         mysql_close(conn);
         return false;
     }
@@ -913,7 +958,7 @@ bool add_funds_balance(int user_id, int amount)
 
     if (mysql_stmt_bind_param(stmt, tx_bind) || mysql_stmt_execute(stmt))
     {
-        cerr << "❌ Insert transaction failed: " << mysql_stmt_error(stmt) << endl;
+        cerr << " Insert transaction failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
         return false;
@@ -929,3 +974,114 @@ bool add_funds_balance(int user_id, int amount)
 }
 
 // See Credit Card Pin.
+
+string get_decrypted_pin(string user_input_password, int user_id)
+{
+    MYSQL *conn;
+    MYSQL_STMT *stmt;
+
+    string DATABASE_IP = env_vars["DATABASE_IP"];
+    string DATABASE_USER = env_vars["DATABASE_USER"];
+    string DATABASE_PASSWORD = env_vars["DATABASE_PASSWORD"];
+    string DATABASE_NAME = env_vars["DATABASE_NAME"];
+    string DATABASE_PORT = env_vars["DATABASE_PORT"];
+
+    conn = mysql_init(NULL);
+    if (!conn)
+    {
+        cerr << "mysql_init() failed" << endl;
+        return "";
+    }
+
+    if (!mysql_real_connect(conn, DATABASE_IP.c_str(), DATABASE_USER.c_str(), DATABASE_PASSWORD.c_str(), DATABASE_NAME.c_str(), stoi(DATABASE_PORT), NULL, 0))
+    {
+        cerr << "Connection failed: " << mysql_error(conn) << endl;
+        mysql_close(conn);
+        return "";
+    }
+
+    // Step 2: Get hashed password from DB
+    const char *pass_sql = "SELECT password FROM Users WHERE id = ?";
+    stmt = mysql_stmt_init(conn);
+    if (!stmt || mysql_stmt_prepare(stmt, pass_sql, strlen(pass_sql)))
+    {
+        cerr << "Prepare (password) failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_close(conn);
+        return "";
+    }
+
+    MYSQL_BIND pass_bind[1], pass_result[1];
+    memset(pass_bind, 0, sizeof(pass_bind));
+    memset(pass_result, 0, sizeof(pass_result));
+
+    pass_bind[0].buffer_type = MYSQL_TYPE_LONG;
+    pass_bind[0].buffer = &user_id;
+
+    char hash_buf[100];
+    pass_result[0].buffer_type = MYSQL_TYPE_STRING;
+    pass_result[0].buffer = hash_buf;
+    pass_result[0].buffer_length = sizeof(hash_buf);
+
+    if (mysql_stmt_bind_param(stmt, pass_bind) ||
+        mysql_stmt_bind_result(stmt, pass_result) ||
+        mysql_stmt_execute(stmt) ||
+        mysql_stmt_fetch(stmt))
+    {
+        cerr << "Failed to fetch password hash: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        mysql_close(conn);
+        return "";
+    }
+
+    mysql_stmt_close(stmt);
+
+    // Step 3: Bcrypt verify
+
+    const char *plain = user_input_password.c_str();
+
+    if (bcrypt_checkpw(plain, hash_buf) != 0)
+    {
+        cerr << "Incorrect password." << endl;
+        mysql_close(conn);
+        return "";
+    }
+
+    // Step 4: Now get PIN
+    const char *pin_sql = "SELECT pin_hash FROM Credit_card WHERE user_id = ?";
+    stmt = mysql_stmt_init(conn);
+    if (!stmt || mysql_stmt_prepare(stmt, pin_sql, strlen(pin_sql)))
+    {
+        cerr << "Prepare (pin) failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_close(conn);
+        return "";
+    }
+
+    MYSQL_BIND pin_bind[1], pin_result[1];
+    memset(pin_bind, 0, sizeof(pin_bind));
+    memset(pin_result, 0, sizeof(pin_result));
+
+    pin_bind[0].buffer_type = MYSQL_TYPE_LONG;
+    pin_bind[0].buffer = &user_id;
+
+    char pin_buf[512];
+    pin_result[0].buffer_type = MYSQL_TYPE_STRING;
+    pin_result[0].buffer = pin_buf;
+    pin_result[0].buffer_length = sizeof(pin_buf);
+
+    if (mysql_stmt_bind_param(stmt, pin_bind) ||
+        mysql_stmt_bind_result(stmt, pin_result) ||
+        mysql_stmt_execute(stmt) ||
+        mysql_stmt_fetch(stmt))
+    {
+        cerr << "Failed to fetch pin_hash: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        mysql_close(conn);
+        return "";
+    }
+
+    mysql_stmt_close(stmt);
+    mysql_close(conn);
+
+    string encrypted_pin_base64(pin_buf);
+    return decrypt_pin(encrypted_pin_base64, "../keys/private.pem");
+}
