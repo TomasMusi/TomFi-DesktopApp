@@ -55,7 +55,7 @@ Throughout this version, I'm exploring:
 
 ## 🖼️ Screenshots
 
-![Screenshot from 2025-06-16 18-25-39](https://github.com/user-attachments/assets/96399ebb-4b91-4484-875f-d8c6919972c0)
+![Screenshot from 2025-07-08 18-55-51](https://github.com/user-attachments/assets/5eeafb9c-b2cf-4188-8bd0-db3362650021)
 
 
 ---
