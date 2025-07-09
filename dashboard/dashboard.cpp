@@ -5,6 +5,7 @@
 #include "chart/chart.h"
 #include "Session/Session.hpp"
 #include "welcome.h"
+#include "settings/settings.h"
 #include "Transaction/transaction.h"
 #include "chart/longChart.h"
 #include "wallet/wallet.h"
@@ -127,6 +128,13 @@ Gtk::Widget *create_dashboard(Gtk::Window &window)
     auto settings_btn = Gtk::make_managed<Gtk::Button>("Settings");
     settings_btn->set_name("sidebar-button");
     settings_btn->set_halign(Gtk::ALIGN_START);
+    settings_btn->signal_clicked().connect([&window]()
+                                           {
+        Gtk::Widget *settings_ui = create_settings(window);
+        window.remove();
+        window.add(*settings_ui);
+        window.set_title("TomFi | Settings");
+        settings_ui->show_all(); });
     // TODO: connect settings_btn->signal_clicked() to settings page
     sidebar->pack_start(*settings_btn, Gtk::PACK_SHRINK);
 

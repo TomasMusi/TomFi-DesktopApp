@@ -5,6 +5,7 @@
 #include <vector>
 #include "transaction.h"
 #include "welcome.h"
+#include "dashboard/settings/settings.h"
 #include "dashboard/dashboard.h"
 #include "dashboard/wallet/wallet.h"
 #include <sstream>
@@ -120,6 +121,14 @@ Gtk::Widget *create_transactions_ui(Gtk::Window &window)
     auto settings_btn = Gtk::make_managed<Gtk::Button>("Settings");
     settings_btn->set_name("sidebar-button");
     settings_btn->set_halign(Gtk::ALIGN_START);
+
+    settings_btn->signal_clicked().connect([&window]()
+                                           {
+        Gtk::Widget *settings_ui = create_settings(window) ;
+        window.remove();
+        window.add(*settings_ui);
+        window.set_title("TomFi | Settings");
+        settings_ui->show_all(); });
     sidebar->pack_start(*settings_btn, Gtk::PACK_SHRINK);
 
     sidebar_wrapper->add(*sidebar);

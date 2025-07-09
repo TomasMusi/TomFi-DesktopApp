@@ -223,12 +223,26 @@ GtkLabel {
     border-radius: 16px;
 }
 
+#dashboard-wrapper .table-cell {
+    background-color: white;
+}
+
 #sidebar-wrapper {
     background-color: #f1f5f9;
     border-radius: 16px 0 0 16px;
     padding: 10px;
 }
 
+
+#amount-out {
+    color: #dc2626;
+    font-weight: bold;
+}
+
+#amount-in {
+    color: #16a34a;
+    font-weight: bold;
+}
 
 .amount-out {
     color: #dc2626;
@@ -261,4 +275,231 @@ GtkLabel {
     border-radius: 6px;
     font-weight: bold;
     font-size: 11px;
+}
+
+
+
+
+
+
+
+
+
+/* ─────────────── TRANSACTIONS PAGE ─────────────── */
+
+#dashboard-title {
+    font-size: 26px;
+    font-weight: bold;
+    color: #1e293b;
+}
+
+GtkGrid {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 10px;
+}
+
+GtkScrolledWindow {
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+}
+
+GtkFrame {
+    background-color: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #d1d5db;
+    padding: 8px;
+}
+
+
+
+GtkLabel {
+    font-size: 13px;
+    color: #334155;
+}
+
+GtkLabel:selected {
+    background-color: #e0f2fe;
+}
+
+GtkLabel:focus {
+    background-color: #dbeafe;
+}
+
+GtkLabel.heading {
+    font-weight: bold;
+    color: #1e293b;
+}
+
+#transaction-row-frame {
+    background-color: white;
+    border-radius: 12px;
+    padding: 10px;
+    border: 1px solid #e5e7eb;
+}
+
+
+#table-header {
+    background-color: #f3f4f6;
+    padding: 12px 16px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+
+#transaction-table-frame {
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    background-color: transparent;
+}
+
+
+
+
+#transaction-table-frame {
+    background-color: white;
+    border-radius: 12px;
+    padding: 8px;
+}
+
+#transaction-grid {
+    background-color: white;
+    padding: 10px;
+}
+
+
+#wallet-card {
+    background: linear-gradient(to bottom right, #3b82f6, #6366f1);
+    border-radius: 20px;
+    padding: 20px;
+    color: white;
+}
+
+#card-balance {
+    font-size: 28px;
+    font-weight: bold;
+}
+
+#card-number {
+    letter-spacing: 2px;
+}
+
+#wallet-primary-btn {
+    background: #6366f1;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 6px 12px;
+    box-shadow: none;
+    outline: none;
+}
+
+
+#active-badge {
+    background: #d1fae5;
+    color: #065f46;
+    font-size: 14px;
+    padding: 4px 8px;
+    border-radius: 12px;
+}
+
+.wallet-action-btn {
+    border: none;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    padding: 4px;
+}
+
+
+
+
+#wallet-actions-wrapper {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 30px 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* Button look */
+#wallet-action-btn {
+    background: #ffffff;
+    border: none;
+    border-radius: 12px;
+    padding: 10px;
+    transition: background 0.2s ease;
+}
+
+#wallet-action-btn:hover {
+    background: #f9fafb;
+}
+
+/* Label styling */
+#wallet-action-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #333;
+}
+
+/* Icon color classes */
+.action-icon-blue {
+    color: #2563eb;
+}
+
+/* Tailwind's blue-600 */
+.action-icon-indigo {
+    color: #4f46e5;
+}
+
+.action-icon-green {
+    color: #16a34a;
+}
+
+.action-icon-red {
+    color: #dc2626;
+}
+
+.action-icon-yellow {
+    color: #ca8a04;
+}
+
+.action-icon-purple {
+    color: #9333ea;
+}
+
+/* ─────────────── SETTINGS PAGE ─────────────── */
+
+
+#settings-content-box {
+    background-color: #fcfcf7;
+    padding-top: 30px;
+    padding-bottom: 30px;
+    padding-left: 60px;
+    padding-right: 60px;
+    border-radius: 16px;
+}
+
+#settings-content-box GtkLabel {
+    font-size: 14px;
+    color: #1f2937;
+    font-weight: normal;
+}
+
+#settings-content-box GtkEntry,
+#settings-content-box GtkTextView {
+    min-height: 30px;
+}
+
+GtkGrid {
+    background-color: transparent;
+    padding: 0px;
+    border-width: 0px;
+}
+
+GtkButton#signout-btn {
+    margin-top: 20px;
+}
+
+GtkButton#save-btn {
+    margin-top: 20px;
 }
