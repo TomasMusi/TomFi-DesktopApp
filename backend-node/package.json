@@ -1,0 +1,26 @@
+{
+  "name": "backend-node",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "genDatabaseSchema": "kysely-codegen --out-file ./db_types.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
+    "kysely": "^0.28.2",
+    "kysely-codegen": "^0.18.5",
+    "mysql2": "^3.14.1",
+    "qrcode": "^1.5.4",
+    "speakeasy": "^2.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
