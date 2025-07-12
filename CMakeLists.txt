@@ -67,17 +67,22 @@ set(SOURCES
     discord-rpc/src/discord_register_linux.cpp
 )
 
+# ─── Executable ─────────────────────────────────────
+add_executable(gtk_hello ${SOURCES})
+
 # ─── OpenSSL ────────────────────────────────────────
 find_package(OpenSSL REQUIRED)
 
-# ─── Executable ─────────────────────────────────────
-add_executable(gtk_hello ${SOURCES})
+# ─── libcurl ────────────────────────────────────────
+find_package(CURL REQUIRED)
+include_directories(${CURL_INCLUDE_DIRS})
 
 # ─── Link Libraries ─────────────────────────────────
 target_link_libraries(gtk_hello
     ${GTKMM_LIBRARIES}
     ${WEBKIT2GTK_LIBRARIES}
     ${JSONCPP_LIBRARIES}
+    ${CURL_LIBRARIES}
     mariadb
     OpenSSL::Crypto
 )

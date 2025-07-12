@@ -8,6 +8,10 @@
 #include "discord-activity/discord_integration.h"
 #include "env.hpp"  // For env
 #include <unistd.h> // for chdir()
+#include <vector>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/wait.h>
 
 using namespace std;
 
@@ -149,18 +153,71 @@ void show_toast_fail(Gtk::Window &parent, const Glib::ustring &message)
         delete toast; }, 2 * 1000);
 }
 
+// Fork, starting node servers, killing ,,Zombies" Linux.
+
+vector<pid_t> child_pids; // Keeps track of the PIDs (Process IDs)
+
+void start_node_server(const char *relative_script_path)
+{
+    pid_t pid = fork(); // Creates a new Process. It clones the current process. The return vallues tells you where you are. Example: pid == 0 (You're in the child process.) pid > 0 (you're in the parent+ pid is the child's PID). pid < 0 (Fork failed)
+
+    // if in child process
+    if (pid == 0)
+    {
+        // Child process
+        if (chdir("backend-node") != 0)
+        {
+            perror("Failed to chdir to backend-node");
+            exit(1);
+        }
+        // AFTER THIS LINE, THE CHILD BECOMES THE NODE.JS PROCESS.
+        execlp("node", "node", "--loader", "ts-node/esm", relative_script_path, (char *)NULL);
+        perror("Failed to start Node.js");
+        exit(1);
+    }
+    else if (pid > 0)
+    {
+        child_pids.push_back(pid);
+        cout << "Started Node.js server: backend-node/" << relative_script_path << " (PID " << pid << ")" << endl;
+    }
+    else
+    {
+        perror("Fork failed");
+    }
+}
+
+void stop_all_node_servers()
+{
+    for (pid_t pid : child_pids)
+    {
+        kill(pid, SIGTERM);    // Graceful ask process to terminate
+        waitpid(pid, NULL, 0); // Reap the child (removes zombies)
+        cout << "Stopped Node.js server (PID " << pid << ")" << endl;
+    }
+    child_pids.clear();
+}
+
+// ensure we don't leave zombies if anything crashes
+void handle_sigchld(int)
+{
+    while (waitpid(-1, NULL, WNOHANG) > 0)
+    {
+    }
+}
+
 int main(int argc, char *argv[])
 {
     chdir(".."); // Move from build/ to the project root
 
     cout << "Program started! " << endl;
 
-    // Starting Node.js
+    // Reap zombies automatically
+    signal(SIGCHLD, handle_sigchld);
 
     cout << "Starting Node.js backend..." << endl;
-    system("node --loader ts-node/esm backend-node/2fa/Create/server.ts &");
-    system("node --loader ts-node/esm backend-node/2fa/2fa-login/server.ts &");
-    system("node --loader ts-node/esm backend-node/2fa/Check/server.ts &");
+    start_node_server("2fa/Create/server.ts");
+    start_node_server("2fa/2fa-login/server.ts");
+    start_node_server("2fa/Check/server.ts");
 
     // Give a server a second to boot.
     this_thread::sleep_for(chrono::seconds(1));
@@ -197,7 +254,12 @@ int main(int argc, char *argv[])
 
     window.show_all();
 
-    return app->run(window);
+    // Closing App
+    app->signal_shutdown().connect([]
+                                   {
+        stop_all_node_servers();   // ensures server shutdown even from UI close
+        Discord_Shutdown(); });
 
-    Discord_Shutdown();
+    int status = app->run(window);
+    return status;
 }

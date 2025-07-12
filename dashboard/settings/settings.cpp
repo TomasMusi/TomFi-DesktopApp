@@ -8,6 +8,7 @@
 #include <nlohmann/json.hpp> // JSON
 #include <iostream>
 #include "welcome.h"
+#include "db/database.h"
 
 using namespace std;
 
@@ -263,7 +264,7 @@ Gtk::Widget *create_settings(Gtk::Window &window)
                         Gtk::MessageDialog dialog(window, "Failed to enable 2FA.", false, Gtk::MESSAGE_ERROR);
                         dialog.run();
                     }
-                } catch (err) {
+                } catch (...) {
                     Gtk::MessageDialog dialog(window, "Invalid response from 2FA server.", false, Gtk::MESSAGE_ERROR);
                     dialog.run();
                 }

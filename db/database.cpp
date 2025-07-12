@@ -1085,3 +1085,79 @@ string get_decrypted_pin(string user_input_password, int user_id)
     string encrypted_pin_base64(pin_buf);
     return decrypt_pin(encrypted_pin_base64, "../keys/private.pem");
 }
+
+// 2FA
+
+// Create, just parsing the generated base32 into two_fa_secret
+bool store_2fa_secret_to_db(int user_id, const string &secret)
+{
+    MYSQL *conn;
+    MYSQL_STMT *stmt;
+
+    // Load environment config
+    string DATABASE_IP = env_vars["DATABASE_IP"];
+    string DATABASE_USER = env_vars["DATABASE_USER"];
+    string DATABASE_PASSWORD = env_vars["DATABASE_PASSWORD"];
+    string DATABASE_NAME = env_vars["DATABASE_NAME"];
+    string DATABASE_PORT = env_vars["DATABASE_PORT"];
+
+    conn = mysql_init(NULL);
+    if (!conn)
+    {
+        cerr << "mysql_init() failed" << endl;
+        return false;
+    }
+
+    if (!mysql_real_connect(conn, DATABASE_IP.c_str(), DATABASE_USER.c_str(),
+                            DATABASE_PASSWORD.c_str(), DATABASE_NAME.c_str(),
+                            stoi(DATABASE_PORT), NULL, 0))
+    {
+        cerr << "Connection failed: " << mysql_error(conn) << endl;
+        mysql_close(conn);
+        return false;
+    }
+
+    // only update two_fa_secret
+    const char *sql = "UPDATE Users SET two_fa_secret = ? WHERE id = ?";
+    stmt = mysql_stmt_init(conn);
+    if (!stmt || mysql_stmt_prepare(stmt, sql, strlen(sql)))
+    {
+        cerr << "Prepare failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_close(conn);
+        return false;
+    }
+
+    MYSQL_BIND bind[2];
+    memset(bind, 0, sizeof(bind));
+
+    // Bind 2FA secret
+    bind[0].buffer_type = MYSQL_TYPE_STRING;
+    bind[0].buffer = (void *)secret.c_str();
+    bind[0].buffer_length = secret.length();
+
+    // Bind user ID
+    bind[1].buffer_type = MYSQL_TYPE_LONG;
+    bind[1].buffer = &user_id;
+
+    if (mysql_stmt_bind_param(stmt, bind))
+    {
+        cerr << "Bind failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        mysql_close(conn);
+        return false;
+    }
+
+    if (mysql_stmt_execute(stmt))
+    {
+        cerr << "Execute failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        mysql_close(conn);
+        return false;
+    }
+
+    mysql_stmt_close(stmt);
+    mysql_close(conn);
+
+    cout << "2FA secret stored successfully for user_id: " << user_id << endl;
+    return true;
+}
