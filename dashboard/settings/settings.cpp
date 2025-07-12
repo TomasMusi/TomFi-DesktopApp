@@ -4,6 +4,8 @@
 #include "settings.h"
 #include "dashboard/wallet/wallet.h"
 #include "dashboard/dashboard.h"
+#include <curl/curl.h>       // Curl for Connection with HTTP
+#include <nlohmann/json.hpp> // JSON
 #include <iostream>
 #include "welcome.h"
 
@@ -175,24 +177,101 @@ Gtk::Widget *create_settings(Gtk::Window &window)
     control_box->set_halign(Gtk::ALIGN_FILL);
     control_box->set_spacing(10);
 
+    auto enable_2fa_btn = Gtk::make_managed<Gtk::Button>("Enable 2FA");
+    enable_2fa_btn->set_name("enable-2fa-btn");
+
     auto signout_btn = Gtk::make_managed<Gtk::Button>("Sign Out");
     signout_btn->set_name("signout-btn");
 
     auto save_btn = Gtk::make_managed<Gtk::Button>("Save Changes");
     save_btn->set_name("save-btn");
 
+    control_box->pack_start(*enable_2fa_btn, Gtk::PACK_SHRINK);
     control_box->pack_start(*signout_btn, Gtk::PACK_SHRINK);
     control_box->pack_end(*save_btn, Gtk::PACK_SHRINK);
+
     content_box->pack_start(*control_box, Gtk::PACK_SHRINK);
 
     signout_btn->signal_clicked().connect([&window]()
                                           {
-        std::cout << "🔓 Signed out." << std::endl;
-        Gtk::MessageDialog dialog(window, "You have been signed out.", false, Gtk::MESSAGE_INFO, Gtk::BUTTONS_OK, true);
-        dialog.run(); });
+                                              cout << "🔓 Signed out." << endl;
+
+                                              // Reset session data
+                                              current_session = Session(); // Resets all fields to default
+
+                                              // Show logout dialog
+                                              Gtk::MessageDialog dialog(window, "You have been signed out.", false, Gtk::MESSAGE_INFO, Gtk::BUTTONS_OK, true);
+                                              dialog.run();
+
+                                              // Navigate back to welcome screen
+                                              Gtk::Widget *welcome_screen = create_welcome(window);
+                                              window.remove();
+                                              window.add(*welcome_screen);
+                                              window.set_title("TomFi | Welcome");
+                                              welcome_screen->show_all(); });
 
     save_btn->signal_clicked().connect([]()
                                        { cout << "✅ Save button pressed." << endl; });
+
+    // 2Fa Logic
+
+    enable_2fa_btn->signal_clicked().connect([&window]()
+                                             {
+        const string& email = current_session.email;
+
+        string json = "{\"email\": \"" + email + "\"}";
+
+        CURL* curl = curl_easy_init();
+        if (curl) {
+            CURLcode res;
+            string response_data;
+            struct curl_slist* headers = NULL;
+            headers = curl_slist_append(headers, "Content-Type: application/json");
+
+            curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:3000/2fa/create");
+            curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json.c_str());
+
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, +[](char* ptr, size_t size, size_t nmemb, string* data) {
+                if (data) {
+                    data->append(ptr, size * nmemb);
+                    return size * nmemb;
+                }
+                return size_t(0);
+            });
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_data);
+
+            res = curl_easy_perform(curl);
+            curl_easy_cleanup(curl);
+            curl_slist_free_all(headers);
+
+            if (res == CURLE_OK) {
+                try {
+                    auto parsed = nlohmann::json::parse(response_data);
+                    if (parsed["success"]) {
+                        string secret = parsed["secret"];
+                        string qr_url = parsed["qr"];
+
+                        // Update session/db
+                        store_2fa_secret_to_db(current_session.user_id, secret);
+
+                        // Show confirmation dialog
+                        Gtk::MessageDialog dialog(window, "2FA Enabled", false, Gtk::MESSAGE_INFO);
+                        dialog.set_secondary_text("Scan this QR in your authenticator:\n\n" + qr_url);
+                        dialog.run();
+                    } else {
+                        Gtk::MessageDialog dialog(window, "Failed to enable 2FA.", false, Gtk::MESSAGE_ERROR);
+                        dialog.run();
+                    }
+                } catch (...) {
+                    Gtk::MessageDialog dialog(window, "Invalid response from 2FA server.", false, Gtk::MESSAGE_ERROR);
+                    dialog.run();
+                }
+            } else {
+                Gtk::MessageDialog dialog(window, "Cannot reach 2FA server.", false, Gtk::MESSAGE_ERROR);
+                dialog.run();
+            }
+        } });
 
     auto center_wrapper = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
     center_wrapper->set_halign(Gtk::ALIGN_CENTER);

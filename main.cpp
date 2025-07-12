@@ -1,9 +1,13 @@
-#include <gtkmm.h>
-#include "welcome.h"
-#include <iostream>
-#include "discord_rpc.h"
+#include <gtkmm.h>       // For Gui
+#include "welcome.h"     // Welcome Page
+#include <iostream>      // for cout, endl etc.
+#include <cstdlib>       // for std::system
+#include <thread>        // for std::this_thread
+#include <chrono>        // for std::chrono::seconds
+#include "discord_rpc.h" // Discord activity
 #include "discord-activity/discord_integration.h"
-#include "env.hpp"
+#include "env.hpp"  // For env
+#include <unistd.h> // for chdir()
 
 using namespace std;
 
@@ -114,7 +118,7 @@ void show_toast_fail(Gtk::Window &parent, const Glib::ustring &message)
     box->set_size_request(toast_width, -1);
     box->get_style_context()->add_class("toast-box-fail");
 
-    // 🟢 Tell GTK to expand the box fully
+    // Tell GTK to expand the box fully
     box->set_hexpand(true);
     box->set_vexpand(true);
 
@@ -147,8 +151,21 @@ void show_toast_fail(Gtk::Window &parent, const Glib::ustring &message)
 
 int main(int argc, char *argv[])
 {
+    chdir(".."); // Move from build/ to the project root
 
     cout << "Program started! " << endl;
+
+    // Starting Node.js
+
+    cout << "Starting Node.js backend..." << endl;
+    system("node --loader ts-node/esm backend-node/2fa/Create/server.ts &");
+    system("node --loader ts-node/esm backend-node/2fa/2fa-login/server.ts &");
+    system("node --loader ts-node/esm backend-node/2fa/Check/server.ts &");
+
+    // Give a server a second to boot.
+    this_thread::sleep_for(chrono::seconds(1));
+
+    // Loading enviroment and GTK, rest of the program.
     load_env(".env");
 
     auto app = Gtk::Application::create(argc, argv, "com.tomfi.welcomepage");

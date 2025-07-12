@@ -22,9 +22,19 @@ app.post('/2fa/create', async (req, res) => {
         name: `TomFi (${email})`
     });
 
+    // ensures it is not undefined!
+    if (!secret.otpauth_url) {
+        console.error('Secret otpauth_url is undefined');
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to generate QR code: missing otpauth_url'
+        });
+    }
+
     try {
         // Generate QR code URL
         const qrCodeDataUrl = await QRCode.toDataURL(secret.otpauth_url);
+
 
         // Respond with the secret and QR
         res.json({
