@@ -94,64 +94,112 @@ This project taught me:
 ## 📁 Directory Structure
 
 ```
+├── backend-node/
+│ ├── 2fa/
+│ │ ├── 2fa-login
+│ │ ├── Check
+│ │ └── Create
+│ ├── db.ts
+│ ├── db_types.ts
+│ ├── node_modules/
+│ ├── package.json
+│ ├── package-lock.json
+│ └── tsconfig.json
 ├── bcrypt/
-│   ├── bcrypt.c
-│   ├── bcrypt.h
-│   ├── COPYING
-│   ├── crypt_blowfish/
-│   ├── Makefile
-│   └── README
+│ ├── bcrypt.c
+│ ├── bcrypt.h
+│ ├── COPYING
+│ ├── crypt_blowfish/
+│ │ ├── crypt.3
+│ │ ├── crypt_blowfish.c
+│ │ ├── crypt_blowfish.h
+│ │ ├── crypt_gensalt.c
+│ │ ├── crypt_gensalt.h
+│ │ ├── crypt.h
+│ │ ├── glibc-*.diff
+│ │ ├── LINKS
+│ │ ├── Makefile
+│ │ ├── ow-crypt.h
+│ │ ├── PERFORMANCE
+│ │ ├── README
+│ │ ├── wrapper.c
+│ │ └── x86.S
+│ ├── Makefile
+│ └── README
 ├── build/
-│   ├── CMakeCache.txt
-│   ├── CMakeFiles/
-│   ├── cmake_install.cmake
-│   ├── gtk_hello
-│   ├── Makefile
-│   ├── README.md
-│   └── style.css
+│ ├── CMakeCache.txt
+│ ├── CMakeFiles/
+│ ├── cmake_install.cmake
+│ ├── gtk_hello
+│ ├── Makefile
+│ ├── README.md
+│ └── style.css
 ├── dashboard/
-│   ├── chart/
-│   ├── dashboard.cpp
-│   ├── dashboard.h
-│   └── Transaction/
+│ ├── chart/
+│ │ ├── chart.cpp
+│ │ ├── chart.h
+│ │ ├── chart.html
+│ │ ├── longChart.cpp
+│ │ ├── longChart.h
+│ │ └── longChart.html
+│ ├── dashboard.cpp
+│ ├── dashboard.h
+│ ├── settings/
+│ │ ├── settings.cpp
+│ │ └── settings.h
+│ └── Transaction/
+│ ├── transaction.cpp
+│ └── transaction.h
 ├── db/
-│   ├── database.cpp
-│   └── database.h
+│ ├── database.cpp
+│ └── database.h
 ├── discord-activity/
-│   ├── discord_integration.cpp
-│   └── discord_integration.h
+│ ├── discord_integration.cpp
+│ └── discord_integration.h
 ├── discord-rpc/
-│   ├── appveyor.yml
-│   ├── build.py
-│   ├── CMakeLists.txt
-│   ├── documentation/
-│   ├── examples/
-│   ├── include/
-│   ├── LICENSE
-│   ├── README.md
-│   └── src/
+│ ├── appveyor.yml
+│ ├── build.py
+│ ├── CMakeLists.txt
+│ ├── documentation/
+│ │ ├── hard-mode.md
+│ │ └── images/
+│ ├── examples/
+│ │ ├── button-clicker
+│ │ ├── send-presence
+│ │ └── unrealstatus
+│ ├── include/
+│ │ ├── discord_register.h
+│ │ └── discord_rpc.h
+│ ├── LICENSE
+│ ├── README.md
+│ └── src/
+│ ├── backoff.h
+│ ├── CMakeLists.txt
+│ ├── connection.h
+│ ├── connection_unix.cpp
+│ ├── connection_win.cpp
+│ ├── discord_register_linux.cpp
+│ ├── discord_register_osx.m
+│ ├── discord_register_win.cpp
+│ ├── discord_rpc.cpp
+│ ├── dllmain.cpp
+│ ├── msg_queue.h
+│ ├── rpc_connection.cpp
+│ ├── rpc_connection.h
+│ ├── serialization.cpp
+│ └── serialization.h
 ├── keys/
-│   ├── private.pem
-│   └── public.pem
+│ ├── private.pem
+│ └── public.pem
 ├── login/
-│   ├── login_page.cpp
-│   └── login_page.h
+│ ├── login_page.cpp
+│ └── login_page.h
 ├── register/
-│   ├── register_page.cpp
-│   └── register.h
+│ ├── register_page.cpp
+│ └── register.h
 ├── Session/
-│   ├── Session.cpp
-│   └── Session.hpp
-├── CMakeLists.txt
-├── env.cpp
-├── env.hpp
-├── gtk_hello
-├── licence.md
-├── main.cpp
-├── README.md
-├── style.css
-├── welcome.cpp
-├── welcome.h
+│ ├── Session.cpp
+│ └── Session.hpp
 ```
 
 

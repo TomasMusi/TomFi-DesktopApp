@@ -194,7 +194,7 @@ Gtk::Widget *create_settings(Gtk::Window &window)
 
     signout_btn->signal_clicked().connect([&window]()
                                           {
-                                              cout << "🔓 Signed out." << endl;
+                                              cout << "Signed out." << endl;
 
                                               // Reset session data
                                               current_session = Session(); // Resets all fields to default
@@ -211,7 +211,7 @@ Gtk::Widget *create_settings(Gtk::Window &window)
                                               welcome_screen->show_all(); });
 
     save_btn->signal_clicked().connect([]()
-                                       { cout << "✅ Save button pressed." << endl; });
+                                       { cout << "Save button pressed." << endl; });
 
     // 2Fa Logic
 
@@ -263,7 +263,7 @@ Gtk::Widget *create_settings(Gtk::Window &window)
                         Gtk::MessageDialog dialog(window, "Failed to enable 2FA.", false, Gtk::MESSAGE_ERROR);
                         dialog.run();
                     }
-                } catch (...) {
+                } catch (err) {
                     Gtk::MessageDialog dialog(window, "Invalid response from 2FA server.", false, Gtk::MESSAGE_ERROR);
                     dialog.run();
                 }
