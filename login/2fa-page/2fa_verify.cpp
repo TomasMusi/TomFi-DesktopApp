@@ -35,7 +35,7 @@ Gtk::Widget *create_2fa_page(Gtk::Window &window, int user_id)
 
         string payload = "{\"user_id\": " + to_string(user_id) + ", \"code\": \"" + code + "\"}";
 
-        curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:3002/2fa/verify");
+        curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:3002/2fa/2fa-login");
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.c_str());
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, +[](char *ptr, size_t size, size_t nmemb, string *data) {
