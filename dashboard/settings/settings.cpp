@@ -232,117 +232,161 @@ Gtk::Widget *create_settings(Gtk::Window &window)
                                               window.set_title("TomFi | Welcome");
                                               welcome_screen->show_all(); });
 
+    // Start of Enable 2fa Button
     enable_2fa_btn->signal_clicked().connect([&window]()
                                              {
     const string &email = current_session.email;
     string json = "{\"email\": \"" + email + "\"}";
 
     CURL *curl = curl_easy_init();
-    if (curl)
+    if (!curl) return;
+
+    string response_data;
+    struct curl_slist *headers = nullptr;
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+
+    curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:3000/2fa/create");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, +[](char *ptr, size_t size, size_t nmemb, string *data)
     {
-        CURLcode res;
-        string response_data;
-        struct curl_slist *headers = NULL;
-        headers = curl_slist_append(headers, "Content-Type: application/json");
-
-        curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:3000/2fa/create");
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json.c_str());
-
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, +[](char *ptr, size_t size, size_t nmemb, string *data)
+        if (data)
         {
-            if (data)
-            {
-                data->append(ptr, size * nmemb);
-                return size * nmemb;
-            }
-            return size_t(0);
-        });
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_data);
+            data->append(ptr, size * nmemb);
+            return size * nmemb;
+        }
+        return size_t(0);
+    });
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_data);
 
-        res = curl_easy_perform(curl);
-        curl_easy_cleanup(curl);
-        curl_slist_free_all(headers);
+    CURLcode res = curl_easy_perform(curl);
+    curl_easy_cleanup(curl);
+    curl_slist_free_all(headers);
 
-        if (res == CURLE_OK)
+    if (res != CURLE_OK)
+    {
+        Gtk::MessageDialog dialog(window, "Cannot reach 2FA server.", false, Gtk::MESSAGE_ERROR);
+        dialog.run();
+        return;
+    }
+
+    try
+    {
+        auto parsed = nlohmann::json::parse(response_data);
+        if (!parsed["success"])
         {
-            try
+            Gtk::MessageDialog dialog(window, "Failed to enable 2FA.", false, Gtk::MESSAGE_ERROR);
+            dialog.run();
+            return;
+        }
+
+        string qr_data_url = parsed["qr"];
+        const string prefix = "data:image/png;base64,";
+        if (qr_data_url.find(prefix) != 0)
+        {
+            Gtk::MessageDialog dialog(window, "Invalid QR code format.", false, Gtk::MESSAGE_ERROR);
+            dialog.run();
+            return;
+        }
+
+        string base64_str = qr_data_url.substr(prefix.length());
+        auto image_data = decode_base64(base64_str);
+
+        try
+        {
+            auto stream = Gio::MemoryInputStream::create();
+            stream->add_data(image_data.data(), image_data.size());
+
+            auto pixbuf = Gdk::Pixbuf::create_from_stream_at_scale(stream, 256, 256, true);
+
+            Gtk::Dialog qrDialog("Scan QR and Enter Code", window, true);
+            qrDialog.set_default_size(320, 400);
+            auto box = qrDialog.get_content_area();
+
+            auto image = Gtk::make_managed<Gtk::Image>(pixbuf);
+            box->pack_start(*image, Gtk::PACK_SHRINK);
+
+            auto code_entry = Gtk::make_managed<Gtk::Entry>();
+            code_entry->set_placeholder_text("Enter 2FA Code");
+            box->pack_start(*code_entry, Gtk::PACK_SHRINK);
+
+            auto confirm_btn = Gtk::make_managed<Gtk::Button>("Confirm");
+            confirm_btn->signal_clicked().connect([code_entry, &qrDialog]()
             {
-                auto parsed = nlohmann::json::parse(response_data);
-                if (parsed["success"])
+                string code = code_entry->get_text();
+                int user_id = current_session.user_id;
+
+                CURL *curl_verify = curl_easy_init();
+                if (!curl_verify) return;
+
+                string verify_response;
+                struct curl_slist *verify_headers = nullptr;
+                verify_headers = curl_slist_append(verify_headers, "Content-Type: application/json");
+
+                string verify_json = "{\"user_id\": " + to_string(user_id) +
+                                     ", \"code\": \"" + code + "\"}";
+
+                curl_easy_setopt(curl_verify, CURLOPT_URL, "http://localhost:3002/2fa/verify");
+                curl_easy_setopt(curl_verify, CURLOPT_HTTPHEADER, verify_headers);
+                curl_easy_setopt(curl_verify, CURLOPT_POSTFIELDS, verify_json.c_str());
+                curl_easy_setopt(curl_verify, CURLOPT_WRITEFUNCTION, +[](char *ptr, size_t size, size_t nmemb, string *data)
                 {
-                    string qr_data_url = parsed["qr"];
-                    string secret = parsed["secret"];
-
-                    const string prefix = "data:image/png;base64,";
-                    if (qr_data_url.find(prefix) != 0)
+                    if (data)
                     {
-                        Gtk::MessageDialog dialog(window, "Invalid QR code format.", false, Gtk::MESSAGE_ERROR);
-                        dialog.run();
-                        return;
+                        data->append(ptr, size * nmemb);
+                        return size * nmemb;
                     }
+                    return size_t(0);
+                });
+                curl_easy_setopt(curl_verify, CURLOPT_WRITEDATA, &verify_response);
 
-                    string base64_str = qr_data_url.substr(prefix.length());
-                    auto image_data = decode_base64(base64_str);
+                CURLcode result = curl_easy_perform(curl_verify);
+                curl_easy_cleanup(curl_verify);
+                curl_slist_free_all(verify_headers);
 
-                    try
+                if (result != CURLE_OK)
+                {
+                    Gtk::MessageDialog dialog(qrDialog, "Failed to contact verification server.", false, Gtk::MESSAGE_ERROR);
+                    dialog.run();
+                    return;
+                }
+
+                try
+                {
+                    auto parsed = nlohmann::json::parse(verify_response);
+                    if (parsed["success"])
                     {
-                        auto stream = Gio::MemoryInputStream::create();
-                        stream->add_data(image_data.data(), image_data.size());
-
-                        auto pixbuf = Gdk::Pixbuf::create_from_stream_at_scale(stream, 256, 256, true);
-
-                        Gtk::Dialog qrDialog("Scan QR and Enter Code", window, true);
-                        qrDialog.set_default_size(320, 400);
-                        auto box = qrDialog.get_content_area();
-
-                        // Image
-                        auto image = Gtk::make_managed<Gtk::Image>(pixbuf);
-                        box->pack_start(*image, Gtk::PACK_SHRINK);
-
-                        // Code input
-                        auto code_entry = Gtk::make_managed<Gtk::Entry>();
-                        code_entry->set_placeholder_text("Enter 2FA Code");
-                        box->pack_start(*code_entry, Gtk::PACK_SHRINK);
-
-                        // Confirm button
-                        auto confirm_btn = Gtk::make_managed<Gtk::Button>("Confirm");
-                        confirm_btn->signal_clicked().connect([code_entry, &qrDialog]() {
-                            string code = code_entry->get_text();
-                            cout << "confirmed" << endl;
-                            qrDialog.close();  // Close the dialog after confirming
-                        });
-                        box->pack_start(*confirm_btn, Gtk::PACK_SHRINK);
-
-                        box->show_all();
-                        qrDialog.run();
-
-                        store_2fa_secret_to_db(current_session.user_id, secret);
+                        cout << "confirmed" << endl;
+                        qrDialog.close();
                     }
-                    catch (const exception &e)
+                    else
                     {
-                        Gtk::MessageDialog dialog(window, "Failed to display QR code.", false, Gtk::MESSAGE_ERROR);
-                        dialog.set_secondary_text(e.what());
+                        Gtk::MessageDialog dialog(qrDialog, "Invalid code. Please try again.", false, Gtk::MESSAGE_ERROR);
                         dialog.run();
                     }
                 }
-                else
+                catch (...)
                 {
-                    Gtk::MessageDialog dialog(window, "Failed to enable 2FA.", false, Gtk::MESSAGE_ERROR);
+                    Gtk::MessageDialog dialog(qrDialog, "Error parsing verification response.", false, Gtk::MESSAGE_ERROR);
                     dialog.run();
                 }
-            }
-            catch (...)
-            {
-                Gtk::MessageDialog dialog(window, "Invalid response from 2FA server.", false, Gtk::MESSAGE_ERROR);
-                dialog.run();
-            }
+            });
+
+            box->pack_start(*confirm_btn, Gtk::PACK_SHRINK);
+            box->show_all();
+            qrDialog.run();
         }
-        else
+        catch (const exception &e)
         {
-            Gtk::MessageDialog dialog(window, "Cannot reach 2FA server.", false, Gtk::MESSAGE_ERROR);
+            Gtk::MessageDialog dialog(window, "Failed to display QR code.", false, Gtk::MESSAGE_ERROR);
+            dialog.set_secondary_text(e.what());
             dialog.run();
         }
+    }
+    catch (...)
+    {
+        Gtk::MessageDialog dialog(window, "Invalid response from 2FA server.", false, Gtk::MESSAGE_ERROR);
+        dialog.run();
     } });
 
     auto center_wrapper = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);

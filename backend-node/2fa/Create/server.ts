@@ -3,6 +3,7 @@
 import express from 'express';
 import speakeasy from 'speakeasy';
 import QRCode from 'qrcode';
+import { db } from '../../db.js'; // database connection
 
 const app = express();
 const port = 3000;
@@ -17,36 +18,37 @@ app.post('/2fa/create', async (req, res) => {
         return res.status(400).json({ error: 'Invalid email provided' });
     }
 
-    // Generate secret
     const secret = speakeasy.generateSecret({
         name: `TomFi (${email})`
     });
 
-    // ensures it is not undefined!
     if (!secret.otpauth_url) {
-        console.error('Secret otpauth_url is undefined');
         return res.status(500).json({
             success: false,
-            message: 'Failed to generate QR code: missing otpauth_url'
+            message: 'Missing otpauth_url'
         });
     }
 
     try {
-        // Generate QR code URL
+        // 🔥 Save to DB!
+        await db
+            .updateTable("Users")
+            .set({ two_fa_secret: secret.base32 })
+            .where("email", "=", email)
+            .execute();
+
         const qrCodeDataUrl = await QRCode.toDataURL(secret.otpauth_url);
 
-
-        // Respond with the secret and QR
         res.json({
             success: true,
-            secret: secret.base32,
+            secret: secret.base32, // optional
             qr: qrCodeDataUrl
         });
     } catch (err) {
-        res.status(500).json({ error: 'Failed to generate QR code' });
+        console.error(err);
+        res.status(500).json({ success: false, message: "Internal error" });
     }
 });
-
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
 });
