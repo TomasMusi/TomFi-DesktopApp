@@ -49,6 +49,7 @@ set(SOURCES
     dashboard/wallet/wallet.cpp
     dashboard/settings/settings.cpp
     login/login_page.cpp
+    login/2fa-page/2fa_verify.cpp
     register/register_page.cpp
     discord-activity/discord_integration.cpp
     dashboard/Transaction/transaction.cpp

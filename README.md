@@ -85,8 +85,7 @@ This project taught me:
 - [x] **Discord Rich Presence** for real-time session display 
 - [X] **Full-featured dashboard** (account overview, transaction history) 
 - [ ] **Transaction functionality** (send/receive, balance updates) 
-- [ ] **2FA (Two-Factor Authentication)** with TOTP setup 
-- [ ] **Mobile/Desktop notification system** for account activity 
+- [X] **2FA (Two-Factor Authentication)** with TOTP setup 
 - [X] **Analytics panel** with spending charts and category breakdowns 
 - [X] **JWT-like token session handling** for secure client access 
 ---

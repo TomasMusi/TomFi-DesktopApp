@@ -3,6 +3,7 @@
 #include "../register/register.h"
 #include "../db/database.h"
 #include "../dashboard/dashboard.h"
+#include "2fa-page/2fa_verify.h"
 
 using namespace std;
 
@@ -10,26 +11,24 @@ struct LoginResults
 {
     string message;
     bool success;
+    int user_id;
+    bool is_2fa_enabled;
 };
-
-LoginResults
-LoginRequest(string &email, string &password)
+LoginResults LoginRequest(string &email, string &password)
 {
-
     if (email.empty() || password.empty())
     {
-        return {" ⛔ Login data are not valid!", false};
+        return {" ⛔ Login data are not valid!", false, -1, false};
     }
 
-    // DB Call.
-
-    if (verify_login(email, password))
+    LoginCheckResult result = verify_login(email, password);
+    if (result.success)
     {
-        return {" ✅ Login Was Sucessfull", true};
+        return {" ✅ Login Successful", true, result.user_id, result.is_2fa_enabled};
     }
     else
     {
-        return {" ⛔ failed :( ", false};
+        return {" ⛔ Login failed", false, -1, false};
     }
 }
 
@@ -80,25 +79,32 @@ create_login_page(Gtk::Window &window)
     login_button->set_size_request(300, 40);
     login_button->signal_clicked().connect([&window, email_entry, pass_entry]()
                                            {
-                                               string Email = email_entry->get_text();
-                                               string Password = pass_entry->get_text();
+    string Email = email_entry->get_text();
+    string Password = pass_entry->get_text();
 
-                                               LoginResults result = LoginRequest(Email, Password);
+    LoginResults result = LoginRequest(Email, Password);
 
-                                               if (result.success)
-                                               {
-                                                   show_toast_success(window, result.message);
+    if (result.success) {
+        show_toast_success(window, result.message);
 
-                                                    window.remove(); // Remove current login page
-                                                    Gtk::Widget *dashboard_ui = create_dashboard(window);; // Load dashboard
-                                                    window.add(*dashboard_ui);
-                                                    window.set_title("TomFi | Dashboard");
-                                                    dashboard_ui->show_all();
-                                               }
-                                               else
-                                               {
-                                                   show_toast_fail(window, result.message);
-                                               } });
+        window.remove();
+
+        if (result.is_2fa_enabled) {
+            // 🔐 Redirect to 2FA screen
+            Gtk::Widget *twofa_ui = create_2fa_page(window, result.user_id);
+            window.add(*twofa_ui);
+            window.set_title("TomFi | Enter 2FA Code");
+            twofa_ui->show_all();
+        } else {
+            // 🚀 Go to Dashboard directly
+            Gtk::Widget *dashboard_ui = create_dashboard(window);
+            window.add(*dashboard_ui);
+            window.set_title("TomFi | Dashboard");
+            dashboard_ui->show_all();
+        }
+    } else {
+        show_toast_fail(window, result.message);
+    } });
 
     auto register_text = Gtk::make_managed<Gtk::Label>("Don't have an account?");
     auto register_link = Gtk::make_managed<Gtk::Button>("Register");

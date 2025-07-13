@@ -162,7 +162,7 @@ string encrypt_pin(const string &pin, const string &pubkey_path)
     return base64_encode(encrypted, result);
 }
 
-bool verify_login(const string &email, const string &password)
+LoginCheckResult verify_login(const string &email, const string &password)
 {
     MYSQL *conn;                    // ,,A phone call to the database"
     MYSQL_STMT *stmt;               // prepared question we want to ask the database
@@ -186,7 +186,7 @@ bool verify_login(const string &email, const string &password)
     if (!conn)
     {
         cerr << "mysql_init() failed" << endl;
-        return false;
+        return {false, -1, false};
     }
 
     if (!mysql_real_connect(conn,
@@ -199,7 +199,7 @@ bool verify_login(const string &email, const string &password)
     {
         cerr << "Connection failed: " << mysql_error(conn) << endl;
         mysql_close(conn);
-        return false;
+        return {false, -1, false};
     }
 
     // 3. Prepare SQL query with 1 placeholder (?)
@@ -209,7 +209,7 @@ bool verify_login(const string &email, const string &password)
     {
         cerr << "mysql_stmt_init() failed" << endl;
         mysql_close(conn);
-        return false;
+        return {false, -1, false};
     }
 
     if (mysql_stmt_prepare(stmt, sql, strlen(sql)))
@@ -217,7 +217,7 @@ bool verify_login(const string &email, const string &password)
         cerr << "Prepare failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
-        return false;
+        return {false, -1, false};
     }
 
     // 4. Bind input parameter securely (prevents SQL injection)
@@ -233,7 +233,7 @@ bool verify_login(const string &email, const string &password)
         cerr << " Bind failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
-        return false;
+        return {false, -1, false};
     }
 
     // 5. Execute the query. This actually sends the question to the database and waits for a reply.
@@ -242,7 +242,7 @@ bool verify_login(const string &email, const string &password)
         cerr << " Execute failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
-        return false;
+        return {false, -1, false};
     }
 
     // 6. Bind result columns to output variables. This gets info about what the answer will look like (how many columns, what type of data etc.)
@@ -252,7 +252,7 @@ bool verify_login(const string &email, const string &password)
         cerr << " Failed to get result metadata" << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
-        return false;
+        return {false, -1, false};
     }
 
     memset(result_bind, 0, sizeof(result_bind));
@@ -298,7 +298,7 @@ bool verify_login(const string &email, const string &password)
         mysql_free_result(prepare_meta_result);
         mysql_stmt_close(stmt);
         mysql_close(conn);
-        return false;
+        return {false, -1, false};
     }
 
     // 7. Fetch the result. This actually fetches the row from the database where the email matched.
@@ -308,7 +308,7 @@ bool verify_login(const string &email, const string &password)
         mysql_free_result(prepare_meta_result);
         mysql_stmt_close(stmt);
         mysql_close(conn);
-        return false;
+        return {false, -1, false};
     }
 
     // 8. Check password
@@ -321,7 +321,7 @@ bool verify_login(const string &email, const string &password)
         mysql_free_result(prepare_meta_result);
         mysql_stmt_close(stmt);
         mysql_close(conn);
-        return false;
+        return {false, -1, false};
     }
 
     // Middleware:
@@ -341,7 +341,7 @@ bool verify_login(const string &email, const string &password)
     {
         cerr << " Prepare card failed: " << mysql_stmt_error(stmt) << endl;
         mysql_close(conn);
-        return false;
+        return {false, -1, false};
     }
 
     MYSQL_BIND card_param[1], card_result[3];
@@ -372,7 +372,7 @@ bool verify_login(const string &email, const string &password)
         cerr << " Card info query failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
-        return false;
+        return {false, -1, false};
     }
 
     if (mysql_stmt_fetch(stmt) == 0)
@@ -409,7 +409,7 @@ bool verify_login(const string &email, const string &password)
     {
         cerr << " Prepare transaction query failed: " << mysql_stmt_error(stmt) << endl;
         mysql_close(conn);
-        return true;
+        return {true, id, twofa_enabled == 1};
     }
 
     // Bind input parameters
@@ -454,7 +454,7 @@ bool verify_login(const string &email, const string &password)
         cerr << " Transaction fetch failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         mysql_close(conn);
-        return true;
+        return {true, id, twofa_enabled == 1};
     }
 
     // Store results
@@ -471,7 +471,7 @@ bool verify_login(const string &email, const string &password)
 
     mysql_stmt_close(stmt);
     mysql_close(conn);
-    return true;
+    return {true, id, twofa_enabled == 1};
 }
 
 // Register
