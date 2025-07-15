@@ -20,16 +20,13 @@ void show_transfer_dialog(Gtk::Window &window)
     dialog.set_resizable(false);
 
     auto content = dialog.get_content_area();
-
-    // Wrapper for full vertical space to allow vertical centering
     auto vcenter_wrapper = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
-    vcenter_wrapper->set_vexpand(true); // allow it to expand vertically
+    vcenter_wrapper->set_vexpand(true);
 
-    // --- Outer content container ---
     auto outer = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
     outer->set_spacing(16);
     outer->set_halign(Gtk::ALIGN_CENTER);
-    outer->set_valign(Gtk::ALIGN_CENTER); // CENTER vertically in dialog
+    outer->set_valign(Gtk::ALIGN_CENTER);
 
     // --- Method selection buttons ---
     auto options_box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
@@ -39,17 +36,17 @@ void show_transfer_dialog(Gtk::Window &window)
 
     auto card_btn = Gtk::make_managed<Gtk::ToggleButton>("Card");
     card_btn->set_size_request(140, 60);
-    card_btn->get_style_context()->add_class("method-button");
+    card_btn->set_name("card-toggle");
 
     auto qr_btn = Gtk::make_managed<Gtk::ToggleButton>("QR Code");
     qr_btn->set_size_request(140, 60);
-    qr_btn->get_style_context()->add_class("method-button");
+    qr_btn->set_name("qr-toggle");
 
     options_box->pack_start(*card_btn, Gtk::PACK_SHRINK);
     options_box->pack_start(*qr_btn, Gtk::PACK_SHRINK);
     outer->pack_start(*options_box, Gtk::PACK_SHRINK);
 
-    // --- Hidden container around stack ---
+    // --- Stack wrapper ---
     auto stack_wrapper = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
     stack_wrapper->set_visible(false);
 
@@ -59,25 +56,76 @@ void show_transfer_dialog(Gtk::Window &window)
 
     // --- Card Form ---
     auto card_form = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
-    card_form->set_spacing(8);
+    card_form->set_spacing(12);
+
+    auto make_labeled_field = [](const string &label_text, Gtk::Entry *entry_widget, const string &id)
+    {
+        auto container = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
+        auto label = Gtk::make_managed<Gtk::Label>(label_text);
+        label->set_halign(Gtk::ALIGN_START);
+        label->set_name(id + "-label");
+
+        entry_widget->set_name(id);
+
+        container->pack_start(*label, Gtk::PACK_SHRINK);
+        container->pack_start(*entry_widget, Gtk::PACK_SHRINK);
+        return container;
+    };
 
     auto card_number = Gtk::make_managed<Gtk::Entry>();
-    card_number->set_placeholder_text("Card Number");
+    card_number->set_placeholder_text("1234 5678 9012 3456");
+    card_form->pack_start(*make_labeled_field("Card Number", card_number, "card_number"), Gtk::PACK_SHRINK);
 
     auto username = Gtk::make_managed<Gtk::Entry>();
-    username->set_placeholder_text("Recipient Username");
+    username->set_placeholder_text("johndoe123");
+    card_form->pack_start(*make_labeled_field("Recipient Username", username, "username"), Gtk::PACK_SHRINK);
 
     auto pin = Gtk::make_managed<Gtk::Entry>();
     pin->set_placeholder_text("PIN");
     pin->set_visibility(false);
+    card_form->pack_start(*make_labeled_field("PIN", pin, "pin"), Gtk::PACK_SHRINK);
 
     auto amount = Gtk::make_managed<Gtk::Entry>();
-    amount->set_placeholder_text("Amount");
+    amount->set_placeholder_text("$0.00");
+    card_form->pack_start(*make_labeled_field("Amount", amount, "amount"), Gtk::PACK_SHRINK);
 
-    card_form->pack_start(*card_number);
-    card_form->pack_start(*username);
-    card_form->pack_start(*pin);
-    card_form->pack_start(*amount);
+    // --- Categories ---
+    auto category_label = Gtk::make_managed<Gtk::Label>("Category");
+    category_label->set_name("category-label");
+    category_label->set_halign(Gtk::ALIGN_START);
+
+    auto categories_box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
+    categories_box->set_spacing(8);
+    categories_box->set_name("categories-box");
+
+    const vector<string> category_names = {"Friend", "Food", "Sports", "Other"};
+    vector<Gtk::CheckButton *> category_buttons;
+
+    for (const auto &name : category_names)
+    {
+        auto check = Gtk::make_managed<Gtk::CheckButton>(name);
+        check->set_name("category-" + name);
+        categories_box->pack_start(*check, Gtk::PACK_SHRINK);
+        category_buttons.push_back(check);
+    }
+
+    card_form->pack_start(*category_label, Gtk::PACK_SHRINK);
+    card_form->pack_start(*categories_box, Gtk::PACK_SHRINK);
+
+    // --- Message field ---
+    auto message_label = Gtk::make_managed<Gtk::Label>("Message (optional)");
+    message_label->set_name("message-label");
+    message_label->set_halign(Gtk::ALIGN_START);
+
+    auto message_area = Gtk::make_managed<Gtk::TextView>();
+    message_area->set_wrap_mode(Gtk::WRAP_WORD);
+    message_area->set_size_request(400, 60);
+    message_area->set_editable(true);
+    message_area->set_name("message");
+
+    card_form->pack_start(*message_label, Gtk::PACK_SHRINK);
+    card_form->pack_start(*message_area, Gtk::PACK_SHRINK);
+
     stack->add(*card_form, "card");
 
     // --- QR Form ---
@@ -86,6 +134,7 @@ void show_transfer_dialog(Gtk::Window &window)
 
     auto qr_label = Gtk::make_managed<Gtk::Label>("Upload QR Code:");
     auto qr_file_chooser = Gtk::make_managed<Gtk::FileChooserButton>("Select QR Code", Gtk::FILE_CHOOSER_ACTION_OPEN);
+    qr_file_chooser->set_name("qr-file");
 
     auto filter = Gtk::FileFilter::create();
     filter->set_name("Images");
@@ -93,15 +142,14 @@ void show_transfer_dialog(Gtk::Window &window)
     filter->add_mime_type("image/jpeg");
     qr_file_chooser->set_filter(filter);
 
-    qr_form->pack_start(*qr_label);
-    qr_form->pack_start(*qr_file_chooser);
+    qr_form->pack_start(*qr_label, Gtk::PACK_SHRINK);
+    qr_form->pack_start(*qr_file_chooser, Gtk::PACK_SHRINK);
     stack->add(*qr_form, "qr");
 
-    // Pack stack inside wrapper
-    stack_wrapper->pack_start(*stack);
-    outer->pack_start(*stack_wrapper);
+    stack_wrapper->pack_start(*stack, Gtk::PACK_SHRINK);
+    outer->pack_start(*stack_wrapper, Gtk::PACK_SHRINK);
 
-    // --- Logic onclick ---
+    // --- Logic ---
     card_btn->signal_toggled().connect([=]()
                                        {
         if (card_btn->get_active()) {
@@ -134,12 +182,76 @@ void show_transfer_dialog(Gtk::Window &window)
 
     if (dialog.run() == Gtk::RESPONSE_OK)
     {
+
+        // We make sure, this only works, when we have opened the card_btn!
         if (card_btn->get_active())
         {
+            string raw_card = card_number->get_text(); // it makes number like "1234 4546 7895 1234" this number: "1234454678951234" which we want to.
+            raw_card.erase(remove(raw_card.begin(), raw_card.end(), ' '), raw_card.end());
+            const string to = username->get_text();
+            const string pin_text = pin->get_text();
+            const string amount_text = amount->get_text();
+            const string message = message_area->get_buffer()->get_text();
+
+            // Validate card number
+            if (raw_card.length() != 16 || !all_of(raw_card.begin(), raw_card.end(), ::isdigit)) // makes sure it is long 16 characters, and are digits!
+            {
+                show_toast_fail(window, "Card number must be exactly 16 digits (excluding spaces).");
+                return;
+            }
+
+            // Validate PIN
+            if (pin_text.length() != 4 || !all_of(pin_text.begin(), pin_text.end(), ::isdigit)) // makes sure the pin must be 4 digits long and it must be digits!
+            {
+                show_toast_fail(window, "PIN must be exactly 4 digits.");
+                return;
+            }
+
+            // Validate username
+            if (to.empty()) // if user gives and empty username, atlest 1 character is needed.
+            {
+                show_toast_fail(window, "Recipient username cannot be empty.");
+                return;
+            }
+
+            // Validate amount
+            try
+            {
+                double amt = stod(amount_text);
+                if (amt < 1.0) // if the amount is less than 1 $
+                {
+                    show_toast_fail(window, "Amount must be at least $1.");
+                    return;
+                }
+            }
+            catch (...)
+            { // if there is some invalid format.
+                show_toast_fail(window, "Invalid amount format.");
+                return;
+            }
+
+            // Validate categories
+            int selected = 0;
+            for (auto *check : category_buttons)
+            {
+                if (check->get_active())
+                    selected++;
+            }
+
+            if (selected != 1)
+            {
+                show_toast_fail(window, "Please select exactly one category.");
+                return;
+            }
+
+            // All passed, we get here only if everything above is good.
             cout << "Card payment submitted!" << endl;
-            cout << "Card: " << card_number->get_text() << endl;
-            cout << "To: " << username->get_text() << endl;
+            cout << "Card: " << card << endl;
+            cout << "To: " << to << endl;
+            cout << "Message: " << message << endl;
         }
+
+        // this only works for qr_btn, when we have it opened.
         else if (qr_btn->get_active())
         {
             cout << "QR payment submitted!" << endl;
