@@ -663,7 +663,7 @@ bool register_data(const string &name, const string &email, const string &passwo
 
     string card_number = generateFormattedNumber();
     int pin = generate_four_digit_number();
-    string encrypted_pin = encrypt_pin(to_string(pin), "../keys/public.pem");
+    string encrypted_pin = encrypt_pin(to_string(pin), "keys/public.pem");
     string balance = "1000";
     int is_active = 1;
 
@@ -1083,7 +1083,7 @@ string get_decrypted_pin(string user_input_password, int user_id)
     mysql_close(conn);
 
     string encrypted_pin_base64(pin_buf);
-    return decrypt_pin(encrypted_pin_base64, "../keys/private.pem");
+    return decrypt_pin(encrypted_pin_base64, "keys/private.pem");
 }
 
 // 2FA

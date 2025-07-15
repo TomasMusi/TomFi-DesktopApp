@@ -12,6 +12,142 @@
 
 using namespace std;
 
+void show_transfer_dialog(Gtk::Window &window)
+{
+    Gtk::Dialog dialog("Select Payment Method", window, true);
+    dialog.set_default_size(500, 300);
+    dialog.set_border_width(20);
+    dialog.set_resizable(false);
+
+    auto content = dialog.get_content_area();
+
+    // Wrapper for full vertical space to allow vertical centering
+    auto vcenter_wrapper = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
+    vcenter_wrapper->set_vexpand(true); // allow it to expand vertically
+
+    // --- Outer content container ---
+    auto outer = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
+    outer->set_spacing(16);
+    outer->set_halign(Gtk::ALIGN_CENTER);
+    outer->set_valign(Gtk::ALIGN_CENTER); // CENTER vertically in dialog
+
+    // --- Method selection buttons ---
+    auto options_box = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_HORIZONTAL);
+    options_box->set_spacing(12);
+    options_box->set_halign(Gtk::ALIGN_CENTER);
+    options_box->set_hexpand(true);
+
+    auto card_btn = Gtk::make_managed<Gtk::ToggleButton>("Card");
+    card_btn->set_size_request(140, 60);
+    card_btn->get_style_context()->add_class("method-button");
+
+    auto qr_btn = Gtk::make_managed<Gtk::ToggleButton>("QR Code");
+    qr_btn->set_size_request(140, 60);
+    qr_btn->get_style_context()->add_class("method-button");
+
+    options_box->pack_start(*card_btn, Gtk::PACK_SHRINK);
+    options_box->pack_start(*qr_btn, Gtk::PACK_SHRINK);
+    outer->pack_start(*options_box, Gtk::PACK_SHRINK);
+
+    // --- Hidden container around stack ---
+    auto stack_wrapper = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
+    stack_wrapper->set_visible(false);
+
+    auto stack = Gtk::make_managed<Gtk::Stack>();
+    stack->set_transition_type(Gtk::STACK_TRANSITION_TYPE_SLIDE_LEFT_RIGHT);
+    stack->set_margin_top(10);
+
+    // --- Card Form ---
+    auto card_form = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
+    card_form->set_spacing(8);
+
+    auto card_number = Gtk::make_managed<Gtk::Entry>();
+    card_number->set_placeholder_text("Card Number");
+
+    auto username = Gtk::make_managed<Gtk::Entry>();
+    username->set_placeholder_text("Recipient Username");
+
+    auto pin = Gtk::make_managed<Gtk::Entry>();
+    pin->set_placeholder_text("PIN");
+    pin->set_visibility(false);
+
+    auto amount = Gtk::make_managed<Gtk::Entry>();
+    amount->set_placeholder_text("Amount");
+
+    card_form->pack_start(*card_number);
+    card_form->pack_start(*username);
+    card_form->pack_start(*pin);
+    card_form->pack_start(*amount);
+    stack->add(*card_form, "card");
+
+    // --- QR Form ---
+    auto qr_form = Gtk::make_managed<Gtk::Box>(Gtk::ORIENTATION_VERTICAL);
+    qr_form->set_spacing(8);
+
+    auto qr_label = Gtk::make_managed<Gtk::Label>("Upload QR Code:");
+    auto qr_file_chooser = Gtk::make_managed<Gtk::FileChooserButton>("Select QR Code", Gtk::FILE_CHOOSER_ACTION_OPEN);
+
+    auto filter = Gtk::FileFilter::create();
+    filter->set_name("Images");
+    filter->add_mime_type("image/png");
+    filter->add_mime_type("image/jpeg");
+    qr_file_chooser->set_filter(filter);
+
+    qr_form->pack_start(*qr_label);
+    qr_form->pack_start(*qr_file_chooser);
+    stack->add(*qr_form, "qr");
+
+    // Pack stack inside wrapper
+    stack_wrapper->pack_start(*stack);
+    outer->pack_start(*stack_wrapper);
+
+    // --- Logic onclick ---
+    card_btn->signal_toggled().connect([=]()
+                                       {
+        if (card_btn->get_active()) {
+            qr_btn->set_active(false);
+            stack->set_visible_child(*card_form);
+            stack_wrapper->show();
+        } else if (!qr_btn->get_active()) {
+            stack_wrapper->hide();
+        } });
+
+    qr_btn->signal_toggled().connect([=]()
+                                     {
+        if (qr_btn->get_active()) {
+            card_btn->set_active(false);
+            stack->set_visible_child(*qr_form);
+            stack_wrapper->show();
+        } else if (!card_btn->get_active()) {
+            stack_wrapper->hide();
+        } });
+
+    // --- Buttons ---
+    dialog.add_button("Cancel", Gtk::RESPONSE_CANCEL);
+    dialog.add_button("Continue", Gtk::RESPONSE_OK);
+
+    vcenter_wrapper->pack_start(*outer, Gtk::PACK_EXPAND_WIDGET);
+    content->pack_start(*vcenter_wrapper, Gtk::PACK_EXPAND_WIDGET);
+
+    dialog.show_all();
+    stack_wrapper->hide();
+
+    if (dialog.run() == Gtk::RESPONSE_OK)
+    {
+        if (card_btn->get_active())
+        {
+            cout << "Card payment submitted!" << endl;
+            cout << "Card: " << card_number->get_text() << endl;
+            cout << "To: " << username->get_text() << endl;
+        }
+        else if (qr_btn->get_active())
+        {
+            cout << "QR payment submitted!" << endl;
+            cout << "QR Path: " << qr_file_chooser->get_filename() << endl;
+        }
+    }
+}
+
 void show_pin_dialog(Gtk::Window *parent_window)
 {
     Gtk::Dialog dialog("Enter Your Password to View PIN", *parent_window, true);
@@ -426,6 +562,11 @@ Gtk::Widget *create_wallet_ui(Gtk::Window &window)
                                           { show_pin_dialog(&window); });
         }
 
+        if (label == "Transfer")
+        {
+            btn->signal_clicked().connect([&window]
+                                          { show_transfer_dialog(window); });
+        }
         grid->attach(*btn, col, 0, 1, 1);
         grid->set_column_homogeneous(true);
         col++;
