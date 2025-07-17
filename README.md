@@ -6,7 +6,7 @@ A native desktop version of the **TomFi** banking system — rebuilt in **C++** 
 
 ---
 
-![Screenshot from 2025-07-05 13-27-06](https://github.com/user-attachments/assets/c0baa42a-e0b8-4cb9-a9ef-6151c2dd2921)
+<img width="1037" height="627" alt="image" src="https://github.com/user-attachments/assets/11c24c6b-fd21-4878-809e-e6ceadda3ac0" />
 
 
 ## 🧩 About the Project
@@ -58,7 +58,7 @@ TomFi Desktop is a high-performance native banking client written in **C++17**, 
 
 ## 🖼️ Screenshots
 
-![Screenshot from 2025-07-08 18-55-51](https://github.com/user-attachments/assets/5eeafb9c-b2cf-4188-8bd0-db3362650021)
+<img width="1231" height="569" alt="image" src="https://github.com/user-attachments/assets/43e84839-2a24-4ed5-93bd-ebc7fcd1caad" />
 
 
 ---
