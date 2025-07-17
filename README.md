@@ -11,9 +11,10 @@ A native desktop version of the **TomFi** banking system — rebuilt in **C++** 
 
 ## 🧩 About the Project
 
-**TomFi Desktop** is a reimplementation of the original TomFi project with a native GUI built from scratch. It aims to bring desktop-native performance and deeper OS integration, while maintaining the core features of the web version.
+TomFi Desktop is a high-performance native banking client written in **C++17**, designed to mirror and extend the functionality of the TomFi web platform. Built using **GTKmm 3.0** for the GUI and **MySQL/MariaDB** as its persistent backend, the app is engineered with modern security, modular architecture, and direct system integration in mind.
 
-Throughout this version, I'm exploring:
+> 🔒 Features include end-to-end encrypted PIN validation, secure user authentication, RSA key handling, live analytics, and cross-platform transaction syncing via a shared database schema.
+
 
 - 🧱 **GTKmm** — native desktop GUI with C++ bindings
 - 🔐 **bcrypt** — secure password hashing
@@ -27,15 +28,17 @@ Throughout this version, I'm exploring:
 
 | Feature                     | Description                                                                 |
 |---------------------------- |-----------------------------------------------------------------------------|
-| 🖥️ **Modern UI**            | Built with GTKmm 3.0 and styled using external CSS                          |
-| 🔒 **Secure Registration**  | Passwords hashed with bcrypt before storage                                 |
+| 🖥️ **Custom GTK UI**        | Fully designed from scratch with CSS-like theming and responsive layout     |
+| 🔒 **RSA-secured PIN checks**| PINs are stored encrypted and decrypted using a private key on-the-fly     |
 | 👤 **Login System**         | Form validation with string trimming, matching, and length checks           |
 | 📱 **Discord Activity**     | Shows real-time presence while using the app                                |
 | 🔐 **Validation Rules**     | Checks for empty fields, length, matching passwords, and forbidden spaces   |
 | 🔧 **Configurable via .env**| Keep secrets out of code using a custom `.env` loader                       |
 | 🧪 **Modular Structure**    | Separated into login, register, welcome, and main logic                     |
 | 🌐 **Web Chart Integration**| Interactive charts embedded using WebKitWebView for HTML/JS rendering       |
- 
+| 📡 **Database Transactions**| Secure balance update & rollback logic via MySQL prepared statements        |
+| 📱 **2FA with QR Support**    | User setup and TOTP validation with backend-issued secrets                |
+
 
 ---
 
@@ -64,12 +67,12 @@ Throughout this version, I'm exploring:
 
 This project taught me:
 
-- Structuring a C++ app with real GUI
-- Using signals, widgets, and style providers in GTKmm
-- Proper string validation and error handling
-- Integrating third-party SDKs like Discord Presence
-- Making builds simpler using CMake
-- Reading `.env` configs without exposing secrets
+- Writing modular, maintainable C++ with proper class abstraction
+- Implementing multi-layer security: bcrypt, RSA, session tokens
+- Integrating external SDKs (Discord, TOTP) natively
+- Embedding and interacting with web-rendered data visualizations (HTML/JS charts)
+- Developed both frontend and backend in C++ while integrating with a Node.js backend through direct HTTP communication for seamless interoperability.- Practicing defensive programming: all DB operations are injection-resistant
+- Mastering cross-language infrastructure via CMake
 
 ---
 
@@ -84,7 +87,7 @@ This project taught me:
 - [x] **Full database integration** with prepared statements and transactions 
 - [x] **Discord Rich Presence** for real-time session display 
 - [X] **Full-featured dashboard** (account overview, transaction history) 
-- [ ] **Transaction functionality** (send/receive, balance updates) 
+- [X] **Transaction functionality** (send/receive, balance updates) 
 - [X] **2FA (Two-Factor Authentication)** with TOTP setup 
 - [X] **Analytics panel** with spending charts and category breakdowns 
 - [X] **JWT-like token session handling** for secure client access 

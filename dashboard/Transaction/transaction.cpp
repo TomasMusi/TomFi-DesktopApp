@@ -191,8 +191,8 @@ Gtk::Widget *create_transactions_ui(Gtk::Window &window)
 
             for (int col = 0; col < 4; ++col)
             {
-                std::string text;
-                std::string css_class = "table-cell";
+                string text;
+                string css_class = "table-cell";
 
                 if (col == 0)
                     text = format_date(tx.date); // formatted date

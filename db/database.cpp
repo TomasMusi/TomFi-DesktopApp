@@ -1161,3 +1161,197 @@ bool store_2fa_secret_to_db(int user_id, const string &secret)
     cout << "2FA secret stored successfully for user_id: " << user_id << endl;
     return true;
 }
+
+bool create_payment(const int sender_account_id,
+                    const string &receiver_card_number,
+                    const string &description,
+                    const string &receiver_name,
+                    const string &category,
+                    const string &amount,
+                    const string &user_pin)
+{
+    MYSQL *conn;
+    MYSQL_STMT *stmt;
+
+    string DATABASE_IP = env_vars["DATABASE_IP"];
+    string DATABASE_USER = env_vars["DATABASE_USER"];
+    string DATABASE_PASSWORD = env_vars["DATABASE_PASSWORD"];
+    string DATABASE_NAME = env_vars["DATABASE_NAME"];
+    string DATABASE_PORT = env_vars["DATABASE_PORT"];
+
+    conn = mysql_init(NULL);
+    if (!conn)
+    {
+        cerr << "mysql_init() failed" << endl;
+        return false;
+    }
+
+    if (!mysql_real_connect(conn, DATABASE_IP.c_str(), DATABASE_USER.c_str(), DATABASE_PASSWORD.c_str(), DATABASE_NAME.c_str(), stoi(DATABASE_PORT), NULL, 0))
+    {
+        cerr << "Connection failed: " << mysql_error(conn) << endl;
+        mysql_close(conn);
+        return false;
+    }
+
+    // Step 1: Check if card is active
+    const char *check_active_sql = "SELECT is_active, pin_hash, balance FROM Credit_card WHERE user_id = ?";
+    stmt = mysql_stmt_init(conn);
+    if (!stmt || mysql_stmt_prepare(stmt, check_active_sql, strlen(check_active_sql)))
+    {
+        cerr << "Prepare failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_close(conn);
+        return false;
+    }
+
+    MYSQL_BIND param[1], result[3];
+    memset(param, 0, sizeof(param));
+    memset(result, 0, sizeof(result));
+
+    param[0].buffer_type = MYSQL_TYPE_LONG;
+    param[0].buffer = (void *)&sender_account_id;
+
+    int is_active;
+    char pin_hash[800];
+    char balance_buf[80];
+
+    result[0].buffer_type = MYSQL_TYPE_LONG;
+    result[0].buffer = &is_active;
+
+    result[1].buffer_type = MYSQL_TYPE_STRING;
+    result[1].buffer = pin_hash;
+    result[1].buffer_length = sizeof(pin_hash);
+
+    result[2].buffer_type = MYSQL_TYPE_STRING;
+    result[2].buffer = balance_buf;
+    result[2].buffer_length = sizeof(balance_buf);
+
+    if (mysql_stmt_bind_param(stmt, param) ||
+        mysql_stmt_bind_result(stmt, result) ||
+        mysql_stmt_execute(stmt) ||
+        mysql_stmt_fetch(stmt))
+    {
+        cerr << "Card lookup failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        mysql_close(conn);
+        return false;
+    }
+    mysql_stmt_close(stmt);
+
+    if (is_active != 1)
+    {
+        cerr << "Card is not active." << endl;
+        mysql_close(conn);
+        return false;
+    }
+
+    // Step 2: Validate PIN
+    string decrypted_pin = decrypt_pin(pin_hash, "keys/private.pem");
+    if (decrypted_pin != user_pin)
+    {
+        cerr << "Incorrect PIN." << endl;
+        mysql_close(conn);
+        return false;
+    }
+
+    // Step 3: Check balance and subtract
+    double current_balance = stod(balance_buf);
+    double transaction_amount = stod(amount);
+
+    if (transaction_amount > current_balance)
+    {
+        cerr << "Insufficient balance." << endl;
+        mysql_close(conn);
+        return false;
+    }
+
+    double new_balance = current_balance - transaction_amount;
+    string new_balance_str = to_string(new_balance);
+
+    const char *update_balance_sql = "UPDATE Credit_card SET balance = ? WHERE user_id = ?";
+    stmt = mysql_stmt_init(conn);
+    if (!stmt || mysql_stmt_prepare(stmt, update_balance_sql, strlen(update_balance_sql)))
+    {
+        cerr << "Prepare update balance failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_close(conn);
+        return false;
+    }
+
+    MYSQL_BIND update_bind[2];
+    memset(update_bind, 0, sizeof(update_bind));
+    update_bind[0].buffer_type = MYSQL_TYPE_STRING;
+    update_bind[0].buffer = (void *)new_balance_str.c_str();
+    update_bind[0].buffer_length = new_balance_str.length();
+    update_bind[1].buffer_type = MYSQL_TYPE_LONG;
+    update_bind[1].buffer = (void *)&sender_account_id;
+
+    if (mysql_stmt_bind_param(stmt, update_bind) || mysql_stmt_execute(stmt))
+    {
+        cerr << "Failed to update balance: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        mysql_close(conn);
+        return false;
+    }
+    mysql_stmt_close(stmt);
+
+    // Step 4: Insert transaction
+    const char *insert_sql = R"(
+        INSERT INTO Transactions (
+            sender_account_id,
+            receiver_account,
+            receiver_user_id,
+            description,
+            reciever_name,
+            category,
+            amount,
+            direction,
+            timestamp
+        ) VALUES (?, ?, NULL, ?, ?, ?, ?, 'out', CURRENT_TIMESTAMP)
+    )";
+
+    stmt = mysql_stmt_init(conn);
+    if (!stmt || mysql_stmt_prepare(stmt, insert_sql, strlen(insert_sql)))
+    {
+        cerr << "Prepare transaction insert failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_close(conn);
+        return false;
+    }
+
+    MYSQL_BIND tx_bind[6];
+    memset(tx_bind, 0, sizeof(tx_bind));
+
+    tx_bind[0].buffer_type = MYSQL_TYPE_LONG;
+    tx_bind[0].buffer = (void *)&sender_account_id;
+
+    tx_bind[1].buffer_type = MYSQL_TYPE_STRING;
+    tx_bind[1].buffer = (void *)receiver_card_number.c_str();
+    tx_bind[1].buffer_length = receiver_card_number.length();
+
+    tx_bind[2].buffer_type = MYSQL_TYPE_STRING;
+    tx_bind[2].buffer = (void *)description.c_str();
+    tx_bind[2].buffer_length = description.length();
+
+    tx_bind[3].buffer_type = MYSQL_TYPE_STRING;
+    tx_bind[3].buffer = (void *)receiver_name.c_str();
+    tx_bind[3].buffer_length = receiver_name.length();
+
+    tx_bind[4].buffer_type = MYSQL_TYPE_STRING;
+    tx_bind[4].buffer = (void *)category.c_str();
+    tx_bind[4].buffer_length = category.length();
+
+    tx_bind[5].buffer_type = MYSQL_TYPE_STRING;
+    tx_bind[5].buffer = (void *)amount.c_str();
+    tx_bind[5].buffer_length = amount.length();
+
+    if (mysql_stmt_bind_param(stmt, tx_bind) || mysql_stmt_execute(stmt))
+    {
+        cerr << "Insert transaction failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        mysql_close(conn);
+        return false;
+    }
+
+    mysql_commit(conn);
+    mysql_stmt_close(stmt);
+    mysql_close(conn);
+    return true;
+}

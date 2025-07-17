@@ -74,6 +74,57 @@ void show_transfer_dialog(Gtk::Window &window)
 
     auto card_number = Gtk::make_managed<Gtk::Entry>();
     card_number->set_placeholder_text("1234 5678 9012 3456");
+
+    // --- Live formatting ---
+    card_number->signal_changed().connect([card_number]()
+                                          {
+    string text = card_number->get_text();
+    int old_pos = card_number->get_position();
+
+    // Step 1: Count digits before old cursor
+    int digit_index = 0;
+    for (int i = 0; i < old_pos && i < static_cast<int>(text.size()); ++i)
+    {
+        if (isdigit(text[i]))
+            digit_index++;
+    }
+
+    // Step 2: Strip all non-digit characters
+    string raw_digits;
+    for (char c : text)
+    {
+        if (isdigit(c))
+            raw_digits += c;
+    }
+
+    // Step 3: Limit to max 16 digits
+    if (raw_digits.size() > 16)
+        raw_digits = raw_digits.substr(0, 16);
+
+    // Step 4: Format with spaces
+    string formatted;
+    int new_cursor_pos = 0;
+    int digit_count = 0;
+
+    for (char digit : raw_digits)
+    {
+        if (digit_count > 0 && digit_count % 4 == 0)
+            formatted += ' ';
+
+        formatted += digit;
+        digit_count++;
+
+        if (digit_count == digit_index)
+            new_cursor_pos = formatted.length();
+    }
+
+    // Step 5: Only update if changed
+    if (formatted != text)
+    {
+        card_number->set_text(formatted);
+        card_number->set_position(new_cursor_pos);
+    } });
+
     card_form->pack_start(*make_labeled_field("Card Number", card_number, "card_number"), Gtk::PACK_SHRINK);
 
     auto username = Gtk::make_managed<Gtk::Entry>();
@@ -182,60 +233,59 @@ void show_transfer_dialog(Gtk::Window &window)
 
     if (dialog.run() == Gtk::RESPONSE_OK)
     {
-
-        // We make sure, this only works, when we have opened the card_btn!
         if (card_btn->get_active())
         {
-            string raw_card = card_number->get_text(); // it makes number like "1234 4546 7895 1234" this number: "1234454678951234" which we want to.
+            string raw_card = card_number->get_text();
             raw_card.erase(remove(raw_card.begin(), raw_card.end(), ' '), raw_card.end());
+
             const string to = username->get_text();
             const string pin_text = pin->get_text();
             const string amount_text = amount->get_text();
             const string message = message_area->get_buffer()->get_text();
+            const string card_text_with_spaces = card_number->get_text();
 
-            // Validate card number
-            if (raw_card.length() != 16 || !all_of(raw_card.begin(), raw_card.end(), ::isdigit)) // makes sure it is long 16 characters, and are digits!
+            if (raw_card.length() != 16 || !all_of(raw_card.begin(), raw_card.end(), ::isdigit))
             {
                 show_toast_fail(window, "Card number must be exactly 16 digits (excluding spaces).");
                 return;
             }
 
-            // Validate PIN
-            if (pin_text.length() != 4 || !all_of(pin_text.begin(), pin_text.end(), ::isdigit)) // makes sure the pin must be 4 digits long and it must be digits!
+            if (pin_text.length() != 4 || !all_of(pin_text.begin(), pin_text.end(), ::isdigit))
             {
                 show_toast_fail(window, "PIN must be exactly 4 digits.");
                 return;
             }
 
-            // Validate username
-            if (to.empty()) // if user gives and empty username, atlest 1 character is needed.
+            if (to.empty())
             {
                 show_toast_fail(window, "Recipient username cannot be empty.");
                 return;
             }
 
-            // Validate amount
             try
             {
                 double amt = stod(amount_text);
-                if (amt < 1.0) // if the amount is less than 1 $
+                if (amt < 1.0)
                 {
                     show_toast_fail(window, "Amount must be at least $1.");
                     return;
                 }
             }
             catch (...)
-            { // if there is some invalid format.
+            {
                 show_toast_fail(window, "Invalid amount format.");
                 return;
             }
 
-            // Validate categories
             int selected = 0;
+            string selected_category;
             for (auto *check : category_buttons)
             {
                 if (check->get_active())
+                {
                     selected++;
+                    selected_category = check->get_label(); // Save Category.
+                }
             }
 
             if (selected != 1)
@@ -244,18 +294,26 @@ void show_transfer_dialog(Gtk::Window &window)
                 return;
             }
 
-            // All passed, we get here only if everything above is good.
             cout << "Card payment submitted!" << endl;
-            cout << "Card: " << card << endl;
+            cout << "Card: " << raw_card << endl;
             cout << "To: " << to << endl;
             cout << "Message: " << message << endl;
-        }
+            cout << "credit card with spaces " << card_text_with_spaces << endl;
+            cout << "Selected category" << endl;
 
-        // this only works for qr_btn, when we have it opened.
+            create_payment(current_session.user_id, card_text_with_spaces, message, to, selected_category, amount_text, pin_text);
+        }
         else if (qr_btn->get_active())
         {
+            Glib::ustring qr_path = qr_file_chooser->get_filename();
+            if (qr_path.empty())
+            {
+                show_toast_fail(window, "You must select a QR code file.");
+                return;
+            }
+
             cout << "QR payment submitted!" << endl;
-            cout << "QR Path: " << qr_file_chooser->get_filename() << endl;
+            cout << "QR Path: " << qr_path << endl;
         }
     }
 }
@@ -345,10 +403,10 @@ void show_deposit_dialog(Gtk::Window *parent_window)
         string amount_str = entry->get_text();
         try
         {
-            int amount = std::stoi(amount_str);
+            int amount = stoi(amount_str);
             if (amount >= 1)
             {
-                cout << "Append funds: " << amount << std::endl;
+                cout << "Append funds: " << amount << endl;
                 add_funds_balance(current_session.user_id, amount);
                 Gtk::Widget *new_ui = create_wallet_ui(*parent_window);
                 parent_window->remove();

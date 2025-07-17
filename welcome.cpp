@@ -62,7 +62,7 @@ Gtk::Widget *create_welcome(Gtk::Window &window)
                                                    }
                                                    else
                                                    {
-                                                       // Optionally show a dialog warning
+                                                       //  show a dialog warning
                                                        show_toast_fail(window, "Access Denied!");
                                                    } });
 
